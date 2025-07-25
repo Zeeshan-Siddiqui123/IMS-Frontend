@@ -1,6 +1,4 @@
 import UrlBreadcrumb from '@/components/UrlBreadcrumb'
-import React from 'react'
-
 const Posts = () => {
   return (
     <div className='p-6'>

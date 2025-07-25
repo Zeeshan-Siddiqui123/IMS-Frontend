@@ -1,5 +1,5 @@
 import UrlBreadcrumb from '@/components/UrlBreadcrumb'
-import React from 'react'
+
 
 const Teams = () => {
   return (
