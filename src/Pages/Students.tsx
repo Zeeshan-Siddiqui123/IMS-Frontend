@@ -10,10 +10,10 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table"
-import { SidebarProvider } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/app-sidebar"
 import { userRepo } from "@/repositories/userRepo"
 import UrlBreadcrumb from "@/components/UrlBreadcrumb"
+
+
 
 interface User {
   _id: string
@@ -131,124 +131,124 @@ const Students: React.FC = () => {
   }, [])
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <div className="p-6"></div>
+    <>
 
-      <div className="min-h-screen w-full p-6">
-        <UrlBreadcrumb />
-        <div className="flex justify-between items-center mb-6 mt-16">
-          <h2 className="text-2xl font-bold">Registered Users</h2>
-          <Button onClick={() => setIsModalOpen(true)}>Add User</Button>
-        </div>
+      
 
-        <div className="rounded-lg border shadow-sm bg-white dark:bg-neutral-900">
-          {loading ? (
-            <div className="flex justify-center items-center h-40">
-              <Spin size="large" />
-            </div>
-          ) : (
-            <Table>
-              <TableHeader className="bg-neutral-100 dark:bg-neutral-800">
-                <TableRow>
-                  <TableHead className="w-12 text-center">#</TableHead>
-                  <TableHead>BQ Id</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>CNIC</TableHead>
-                  <TableHead>Course</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.length > 0 ? (
-                  users.map((user, index) => (
-                    <TableRow key={user._id}>
-                      <TableCell className="text-center">{index + 1}</TableCell>
-                      <TableCell>{user.bq_id}</TableCell>
-                      <TableCell>{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.phone}</TableCell>
-                      <TableCell>{user.CNIC}</TableCell>
-                      <TableCell>{user.course}</TableCell>
-                      <TableCell className="flex gap-2 justify-end">
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => openEditModal(user)}
-                          className="cursor-pointer"
-                        >
-                          <MdEditSquare className="text-white" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(user._id)}
-                          className="cursor-pointer"
+        <div className="min-h-screen w-full p-6">
+          <UrlBreadcrumb />
+          <div className="flex justify-between items-center mb-6 mt-5">
+            <h2 className="text-2xl font-bold">Registered Users</h2>
+            <Button onClick={() => setIsModalOpen(true)} className="cursor-pointer">Add User</Button>
+          </div>
 
-                        >
-                          <MdDeleteSweep className="text-white" />
-                        </Button>
+          <div className="rounded-lg border shadow-sm bg-white dark:bg-neutral-900">
+            {loading ? (
+              <div className="flex justify-center items-center h-40">
+                <Spin size="large" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader className="bg-neutral-100 dark:bg-neutral-800">
+                  <TableRow>
+                    <TableHead className="w-12 text-center">#</TableHead>
+                    <TableHead>BQ Id</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>CNIC</TableHead>
+                    <TableHead>Course</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.length > 0 ? (
+                    users.map((user, index) => (
+                      <TableRow key={user._id}>
+                        <TableCell className="text-center">{index + 1}</TableCell>
+                        <TableCell>{user.bq_id}</TableCell>
+                        <TableCell>{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{user.phone}</TableCell>
+                        <TableCell>{user.CNIC}</TableCell>
+                        <TableCell>{user.course}</TableCell>
+                        <TableCell className="flex gap-2 justify-end">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => openEditModal(user)}
+                            className="cursor-pointer"
+                          >
+                            <MdEditSquare className="text-white" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(user._id)}
+                            className="cursor-pointer"
+
+                          >
+                            <MdDeleteSweep className="text-white" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                        No users found
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                      No users found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-
-        {/* Modal Form */}
-        <Modal
-          title={editingId ? "Edit User" : "Create Account"}
-          open={isModalOpen}
-          onCancel={() => {
-            setIsModalOpen(false)
-            resetForm()
-          }}
-          footer={null}
-          centered
-        >
-          <div className="flex flex-col gap-4">
-            {[
-              { name: "name", placeholder: "Full Name" },
-              { name: "bq_id", placeholder: "BQ ID" },
-              { name: "email", placeholder: "Email", type: "email" },
-              { name: "phone", placeholder: "Phone" },
-              { name: "CNIC", placeholder: "CNIC" },
-              { name: "course", placeholder: "Course" },
-              { name: "password", placeholder: "Password", type: "password" },
-            ].map((input) => (
-              <div key={input.name}>
-                <input
-                  type={input.type || "text"}
-                  name={input.name}
-                  placeholder={input.placeholder}
-                  value={(formData as any)[input.name]}
-                  onChange={handleChange}
-                  className={`px-4 py-2 rounded-md bg-gray-100 border w-full ${
-                    errors[input.name] ? "border-red-500" : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                />
-                {errors[input.name] && (
-                  <p className="text-red-500 text-sm">{errors[input.name]}</p>
-                )}
-              </div>
-            ))}
-            <Button className="mt-4 cursor-pointer" onClick={handleSave}>
-              {editingId ? "Update User" : "Create User"}
-            </Button>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </div>
-        </Modal>
-      </div>
-    </SidebarProvider>
+
+          {/* Modal Form */}
+          <Modal
+            title={editingId ? "Edit User" : "Create Account"}
+            open={isModalOpen}
+            onCancel={() => {
+              setIsModalOpen(false)
+              resetForm()
+            }}
+            footer={null}
+            centered
+          >
+            <div className="flex flex-col gap-4">
+              {[
+                { name: "name", placeholder: "Full Name" },
+                { name: "bq_id", placeholder: "BQ ID" },
+                { name: "email", placeholder: "Email", type: "email" },
+                { name: "phone", placeholder: "Phone" },
+                { name: "CNIC", placeholder: "CNIC" },
+                { name: "course", placeholder: "Course" },
+                { name: "password", placeholder: "Password", type: "password" },
+              ].map((input) => (
+                <div key={input.name}>
+                  <input
+                    type={input.type || "text"}
+                    name={input.name}
+                    placeholder={input.placeholder}
+                    value={(formData as any)[input.name]}
+                    onChange={handleChange}
+                    className={`px-4 py-2 rounded-md bg-gray-100 border w-full ${errors[input.name] ? "border-red-500" : "border-gray-300"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  />
+                  {errors[input.name] && (
+                    <p className="text-red-500 text-sm">{errors[input.name]}</p>
+                  )}
+                </div>
+              ))}
+              <Button className="mt-4 cursor-pointer" onClick={handleSave}>
+                {editingId ? "Update User" : "Create User"}
+              </Button>
+            </div>
+          </Modal>
+        </div>
+      
+    </>
   )
 }
 
