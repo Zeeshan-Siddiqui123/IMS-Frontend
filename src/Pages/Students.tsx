@@ -158,7 +158,7 @@ const Students: React.FC = () => {
                     <TableHead>Phone</TableHead>
                     <TableHead>CNIC</TableHead>
                     <TableHead>Course</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
