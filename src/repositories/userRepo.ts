@@ -15,13 +15,13 @@ export class UserRepo {
 
   // Delete user by ID
   async deleteUser(id: string) {
-    const response = await api.delete(`/user/${id}`)
+    const response = await api.delete(`/user/delete/${id}`)
     return response.data
   }
 
   // Update user by ID (Optional)
   async updateUser(id: string, userData: any) {
-    const response = await api.put(`/user/${id}`, userData)
+    const response = await api.put(`/user/update/${id}`, userData)
     return response.data
   }
 }

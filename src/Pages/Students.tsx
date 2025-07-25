@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { message, Modal, Spin } from "antd"
 import { Button } from "@/components/ui/button"
+import { MdDeleteSweep, MdEditSquare } from "react-icons/md"
 import {
   Table,
   TableHeader,
@@ -12,6 +13,7 @@ import {
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { userRepo } from "@/repositories/userRepo"
+import UrlBreadcrumb from "@/components/UrlBreadcrumb"
 
 interface User {
   _id: string
@@ -28,7 +30,8 @@ const Students: React.FC = () => {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [errors, setErrors] = useState({})
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const [formData, setFormData] = useState({
     name: "",
@@ -49,39 +52,47 @@ const Students: React.FC = () => {
     try {
       const data = await userRepo.getAllUsers()
       setUsers(data || [])
-    } catch (error) {
+    } catch {
       message.error("Failed to fetch users")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleAddUser = async () => {
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      bq_id: "",
+      email: "",
+      password: "",
+      phone: "",
+      CNIC: "",
+      course: "",
+    })
+    setErrors({})
+    setEditingId(null)
+  }
+
+  const handleSave = async () => {
     try {
-      await userRepo.addUser(formData)
-      message.success("User added successfully")
+      if (editingId) {
+        await userRepo.updateUser(editingId, formData)
+        message.success("User updated successfully")
+      } else {
+        await userRepo.addUser(formData)
+        message.success("User added successfully")
+      }
       setIsModalOpen(false)
-      setFormData({
-        name: "",
-        bq_id: "",
-        email: "",
-        password: "",
-        phone: "",
-        CNIC: "",
-        course: "",
-      })
-      setErrors({})
+      resetForm()
       fetchUsers()
     } catch (error: any) {
       if (error.response?.data?.errors) {
-        // Backend validation errors
         setErrors(error.response.data.errors)
       } else {
-        message.error(error.response?.data?.message )
+        message.error(error.response?.data?.message || "Action failed")
       }
     }
   }
-  
 
   const handleDelete = (id: string) => {
     Modal.confirm({
@@ -94,11 +105,25 @@ const Students: React.FC = () => {
           await userRepo.deleteUser(id)
           setUsers((prev) => prev.filter((user) => user._id !== id))
           message.success("User deleted successfully")
-        } catch (error) {
+        } catch {
           message.error("Failed to delete user")
         }
       },
     })
+  }
+
+  const openEditModal = (user: User) => {
+    setFormData({
+      name: user.name,
+      bq_id: user.bq_id,
+      email: user.email,
+      password: "",
+      phone: user.phone,
+      CNIC: user.CNIC,
+      course: user.course,
+    })
+    setEditingId(user._id)
+    setIsModalOpen(true)
   }
 
   useEffect(() => {
@@ -108,8 +133,11 @@ const Students: React.FC = () => {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <div className="min-h-screen w-full p-6 mt-16">
-        <div className="flex justify-between items-center mb-6">
+      <div className="p-6"></div>
+
+      <div className="min-h-screen w-full p-6">
+        <UrlBreadcrumb />
+        <div className="flex justify-between items-center mb-6 mt-16">
           <h2 className="text-2xl font-bold">Registered Users</h2>
           <Button onClick={() => setIsModalOpen(true)}>Add User</Button>
         </div>
@@ -144,20 +172,30 @@ const Students: React.FC = () => {
                       <TableCell>{user.phone}</TableCell>
                       <TableCell>{user.CNIC}</TableCell>
                       <TableCell>{user.course}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="flex gap-2 justify-end">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => openEditModal(user)}
+                          className="cursor-pointer"
+                        >
+                          <MdEditSquare className="text-white" />
+                        </Button>
                         <Button
                           variant="destructive"
                           size="sm"
                           onClick={() => handleDelete(user._id)}
+                          className="cursor-pointer"
+
                         >
-                          Delete
+                          <MdDeleteSweep className="text-white" />
                         </Button>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                       No users found
                     </TableCell>
                   </TableRow>
@@ -167,11 +205,14 @@ const Students: React.FC = () => {
           )}
         </div>
 
-        {/* MODAL FORM */}
+        {/* Modal Form */}
         <Modal
-          title="Create Account"
+          title={editingId ? "Edit User" : "Create Account"}
           open={isModalOpen}
-          onCancel={() => setIsModalOpen(false)}
+          onCancel={() => {
+            setIsModalOpen(false)
+            resetForm()
+          }}
           footer={null}
           centered
         >
@@ -185,18 +226,24 @@ const Students: React.FC = () => {
               { name: "course", placeholder: "Course" },
               { name: "password", placeholder: "Password", type: "password" },
             ].map((input) => (
-              <input
-                key={input.name}
-                type={input.type || "text"}
-                name={input.name}
-                placeholder={input.placeholder}
-                value={(formData as any)[input.name]}
-                onChange={handleChange}
-                className="px-4 py-2 rounded-md bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div key={input.name}>
+                <input
+                  type={input.type || "text"}
+                  name={input.name}
+                  placeholder={input.placeholder}
+                  value={(formData as any)[input.name]}
+                  onChange={handleChange}
+                  className={`px-4 py-2 rounded-md bg-gray-100 border w-full ${
+                    errors[input.name] ? "border-red-500" : "border-gray-300"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                />
+                {errors[input.name] && (
+                  <p className="text-red-500 text-sm">{errors[input.name]}</p>
+                )}
+              </div>
             ))}
-            <Button className="mt-4" onClick={handleAddUser}>
-              Create User
+            <Button className="mt-4 cursor-pointer" onClick={handleSave}>
+              {editingId ? "Update User" : "Create User"}
             </Button>
           </div>
         </Modal>
