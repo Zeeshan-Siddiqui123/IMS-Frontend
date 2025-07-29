@@ -209,50 +209,74 @@ const Students: React.FC = () => {
           )}
         </div>
 
-        {/* Modal Form */}
-        {/* Modal Form */}
+
         <Modal
-          title={editingId ? "Edit User" : "Create Account"}
+          title={
+            <span className="text-xl font-semibold mb-3 text-center">
+              {editingId ? "Edit User" : "Create Account"}
+            </span>
+          }
           open={isModalOpen}
           onCancel={() => {
-            setIsModalOpen(false)
-            resetForm()
+            setIsModalOpen(false);
+            resetForm();
           }}
           footer={null}
           centered
         >
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 mt-7">
             {[
-              { name: "name", placeholder: "Full Name", type: "text" },
-              { name: "bq_id", placeholder: "BQ ID", type: "text" },
-              { name: "email", placeholder: "Email", type: "email" },
-              { name: "phone", placeholder: "Phone", type: "text" },
-              { name: "CNIC", placeholder: "CNIC", type: "text" },
-              { name: "course", placeholder: "Course", type: "text" },
-              !editingId && { name: "password", placeholder: "Password", type: "password" },
+              { name: "name", label: "Full Name", type: "text" },
+              { name: "bq_id", label: "BQ ID", type: "text" },
+              { name: "email", label: "Email", type: "email" },
+              { name: "phone", label: "Phone", type: "text" },
+              { name: "CNIC", label: "CNIC", type: "text" },
+              { name: "course", label: "Course", type: "text" },
+              !editingId && { name: "password", label: "Password", type: "password" },
             ]
               .filter(Boolean)
               .map((input: any) => (
-                <div key={input!.name}>
+                <div key={input.name} className="relative z-0 w-full group">
                   <input
-                    type={input!.type}
-                    name={input!.name}
-                    placeholder={input!.placeholder}
-                    value={(formData as any)[input!.name]}
+                    type={input.type}
+                    name={input.name}
+                    id={input.name}
+                    value={(formData as any)[input.name]}
                     onChange={handleChange}
-                    className={`px-4 py-2 rounded-md bg-gray-100 border w-full ${errors[input!.name] ? "border-red-500" : "border-gray-300"
-                      } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0
+      ${errors[input.name] ? "border-red-500" : "border-gray-300"}
+    `}
+                    placeholder=" " // ye chahiye floating ke liye
+                    autoComplete="off"
                   />
-                  {errors[input!.name] && (
-                    <p className="text-red-500 text-sm">{errors[input!.name]}</p>
+                  <label
+                    htmlFor={input.name}
+                    className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 
+      ${(formData as any)[input.name]
+                        ? "-translate-y-6 scale-75 text-blue-600"
+                        : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
+                      }`}
+                  >
+                    {input.label}
+                  </label>
+                  {errors[input.name] && (
+                    <p className="text-red-500 text-xs mt-1">{errors[input.name]}</p>
                   )}
                 </div>
+
               ))}
-            <Button className="mt-4 cursor-pointer" onClick={handleSave}>
-              {editingId ? "Update User" : "Create User"}
-            </Button>
           </div>
+
+          <Button
+            className="w-full h-11 text-lg font-medium shadow-sm hover:shadow-md transition"
+            onClick={handleSave}
+          >
+            {editingId ? "Update User" : "Create User"}
+          </Button>
         </Modal>
+
+
+
 
       </div>
 
