@@ -19,6 +19,7 @@ interface User {
   _id: string
   name: string
   bq_id: string
+  type: string
   username: string
   email: string
   phone: string
@@ -37,6 +38,7 @@ const Students: React.FC = () => {
     name: "",
     bq_id: "",
     email: "",
+    type: "",
     password: "",
     phone: "",
     CNIC: "",
@@ -63,6 +65,7 @@ const Students: React.FC = () => {
     setFormData({
       name: "",
       bq_id: "",
+      type: "",
       email: "",
       password: "",
       phone: "",
@@ -117,6 +120,7 @@ const Students: React.FC = () => {
       name: user.name,
       bq_id: user.bq_id,
       email: user.email,
+      type: user.type,
       password: "",
       phone: user.phone,
       CNIC: user.CNIC,
@@ -219,19 +223,19 @@ const Students: React.FC = () => {
         >
           <div className="flex flex-col gap-4">
             {[
-              { name: "name", placeholder: "Full Name" },
-              { name: "bq_id", placeholder: "BQ ID" },
+              { name: "name", placeholder: "Full Name", type: "text" },
+              { name: "bq_id", placeholder: "BQ ID", type: "text" },
               { name: "email", placeholder: "Email", type: "email" },
-              { name: "phone", placeholder: "Phone" },
-              { name: "CNIC", placeholder: "CNIC" },
-              { name: "course", placeholder: "Course" },
+              { name: "phone", placeholder: "Phone", type: "text" },
+              { name: "CNIC", placeholder: "CNIC", type: "text" },
+              { name: "course", placeholder: "Course", type: "text" },
               !editingId && { name: "password", placeholder: "Password", type: "password" },
             ]
               .filter(Boolean)
-              .map((input) => (
+              .map((input: any) => (
                 <div key={input!.name}>
                   <input
-                    type={input!.type || "text"}
+                    type={input!.type}
                     name={input!.name}
                     placeholder={input!.placeholder}
                     value={(formData as any)[input!.name]}
