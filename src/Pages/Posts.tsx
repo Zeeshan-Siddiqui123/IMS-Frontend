@@ -13,6 +13,8 @@ interface Post {
   image: string;
 }
 
+const API_BASE = "http://localhost:3000"; // adjust if needed
+
 const Posts = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +28,7 @@ const Posts = () => {
     description: "",
     link: "",
     image: null as File | null,
+    existingImage: "", // holds old image path for backend
   });
 
   const fetchPosts = async () => {
@@ -45,6 +48,7 @@ const Posts = () => {
       description: "",
       link: "",
       image: null,
+      existingImage: "",
     });
     setPreviewImage(null);
     setErrors({});
@@ -59,7 +63,7 @@ const Posts = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setFormData((prev) => ({ ...prev, image: file }));
-    setPreviewImage(file ? URL.createObjectURL(file) : null);
+    if (file) setPreviewImage(URL.createObjectURL(file));
   };
 
   const handleSave = async () => {
@@ -68,6 +72,7 @@ const Posts = () => {
       form.append("title", formData.title);
       form.append("description", formData.description);
       form.append("link", formData.link);
+      form.append("existingImage", formData.existingImage);
       if (formData.image) form.append("image", formData.image);
 
       if (editingId) {
@@ -113,8 +118,9 @@ const Posts = () => {
       description: post.description,
       link: post.link,
       image: null,
+      existingImage: post.image, // send old image path
     });
-    setPreviewImage(post.image || null);
+    setPreviewImage(post.image ? `${API_BASE}${post.image.startsWith("/") ? post.image : "/" + post.image}` : null);
     setEditingId(post._id);
     setIsModalOpen(true);
   };
@@ -136,7 +142,7 @@ const Posts = () => {
           <Spin size="large" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {posts.length > 0 ? (
             posts.map((post) => (
               <div
@@ -144,9 +150,9 @@ const Posts = () => {
                 className="bg-white dark:bg-neutral-900 shadow rounded-lg overflow-hidden"
               >
                 <img
-                  src={post.image}
+                  src={`${API_BASE}${post.image.startsWith("/") ? post.image : "/" + post.image}`}
                   alt={post.title}
-                  className="h-48 w-full object-cover"
+                  className="h-44 w-full object-cover"
                 />
                 <div className="p-4">
                   <h2 className="text-lg font-semibold">{post.title}</h2>
@@ -164,18 +170,10 @@ const Posts = () => {
                     </a>
                   )}
                   <div className="flex justify-end gap-2 mt-4">
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => openEditModal(post)}
-                    >
+                    <Button variant="default" size="sm" onClick={() => openEditModal(post)}>
                       <MdEditSquare className="text-white" />
                     </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(post._id)}
-                    >
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(post._id)}>
                       <MdDeleteSweep className="text-white" />
                     </Button>
                   </div>
@@ -190,11 +188,7 @@ const Posts = () => {
 
       {/* Modal */}
       <Modal
-        title={
-          <span className="text-xl font-semibold mb-3 text-center">
-            {editingId ? "Edit Post" : "Create Post"}
-          </span>
-        }
+        title={<span className="text-xl font-semibold mb-3 text-center">{editingId ? "Edit Post" : "Create Post"}</span>}
         open={isModalOpen}
         onCancel={() => {
           setIsModalOpen(false);
@@ -204,7 +198,6 @@ const Posts = () => {
         centered
       >
         <div className="grid grid-cols-1 gap-6 mb-6 mt-7">
-          {/* Floating label inputs */}
           {[
             { name: "title", label: "Title", type: "text" },
             { name: "link", label: "Link", type: "text" },
@@ -232,13 +225,10 @@ const Posts = () => {
               >
                 {input.label}
               </label>
-              {errors[input.name] && (
-                <p className="text-red-500 text-xs mt-1">{errors[input.name]}</p>
-              )}
+              {errors[input.name] && <p className="text-red-500 text-xs mt-1">{errors[input.name]}</p>}
             </div>
           ))}
 
-          {/* Description Textarea */}
           <div className="relative z-0 w-full group">
             <textarea
               name="description"
@@ -254,35 +244,23 @@ const Posts = () => {
             <label
               htmlFor="description"
               className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${
-                formData.description
-                  ? "-translate-y-6 scale-75 text-blue-600"
-                  : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
+                formData.description ? "-translate-y-6 scale-75 text-blue-600" : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
               }`}
             >
               Description
             </label>
-            {errors.description && (
-              <p className="text-red-500 text-xs mt-1">{errors.description}</p>
-            )}
+            {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
           </div>
 
-          {/* Image Upload */}
           <div className="flex flex-col gap-2">
             <input type="file" accept="image/*" onChange={handleImageChange} />
             {previewImage && (
-              <img
-                src={previewImage}
-                alt="Preview"
-                className="h-40 w-full object-cover rounded border"
-              />
+              <img src={previewImage} alt="Preview" className="h-40 w-full object-cover rounded border" />
             )}
           </div>
         </div>
 
-        <Button
-          className="w-full h-11 text-lg font-medium shadow-sm hover:shadow-md transition"
-          onClick={handleSave}
-        >
+        <Button className="w-full h-11 text-lg font-medium shadow-sm hover:shadow-md transition" onClick={handleSave}>
           {editingId ? "Update Post" : "Create Post"}
         </Button>
       </Modal>
