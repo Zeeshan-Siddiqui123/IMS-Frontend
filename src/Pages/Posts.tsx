@@ -13,7 +13,11 @@ interface Post {
   image: string;
 }
 
-const API_BASE = "http://localhost:3000"; // adjust if needed
+// ✅ Hardcoded Base URL
+const API_BASE =
+  window.location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "https://ims-server-sage.vercel.app";
 
 const Posts = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -28,7 +32,7 @@ const Posts = () => {
     description: "",
     link: "",
     image: null as File | null,
-    existingImage: "", // holds old image path for backend
+    existingImage: "",
   });
 
   const fetchPosts = async () => {
@@ -55,7 +59,9 @@ const Posts = () => {
     setEditingId(null);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -118,9 +124,15 @@ const Posts = () => {
       description: post.description,
       link: post.link,
       image: null,
-      existingImage: post.image, // send old image path
+      existingImage: post.image,
     });
-    setPreviewImage(post.image ? `${API_BASE}${post.image.startsWith("/") ? post.image : "/" + post.image}` : null);
+    setPreviewImage(
+      post.image
+        ? `${API_BASE}${
+            post.image.startsWith("/") ? post.image : "/" + post.image
+          }`
+        : null
+    );
     setEditingId(post._id);
     setIsModalOpen(true);
   };
@@ -150,7 +162,9 @@ const Posts = () => {
                 className="bg-white dark:bg-neutral-900 shadow rounded-lg overflow-hidden"
               >
                 <img
-                  src={`${API_BASE}${post.image.startsWith("/") ? post.image : "/" + post.image}`}
+                  src={`${API_BASE}${
+                    post.image.startsWith("/") ? post.image : "/" + post.image
+                  }`}
                   alt={post.title}
                   className="h-44 w-full object-cover"
                 />
@@ -170,10 +184,18 @@ const Posts = () => {
                     </a>
                   )}
                   <div className="flex justify-end gap-2 mt-4">
-                    <Button variant="default" size="sm" onClick={() => openEditModal(post)}>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => openEditModal(post)}
+                    >
                       <MdEditSquare className="text-white" />
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(post._id)}>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(post._id)}
+                    >
                       <MdDeleteSweep className="text-white" />
                     </Button>
                   </div>
@@ -188,7 +210,11 @@ const Posts = () => {
 
       {/* Modal */}
       <Modal
-        title={<span className="text-xl font-semibold mb-3 text-center">{editingId ? "Edit Post" : "Create Post"}</span>}
+        title={
+          <span className="text-xl font-semibold mb-3 text-center">
+            {editingId ? "Edit Post" : "Create Post"}
+          </span>
+        }
         open={isModalOpen}
         onCancel={() => {
           setIsModalOpen(false);
@@ -198,10 +224,8 @@ const Posts = () => {
         centered
       >
         <div className="grid grid-cols-1 gap-6 mb-6 mt-7">
-          {[
-            { name: "title", label: "Title", type: "text" },
-            { name: "link", label: "Link", type: "text" },
-          ].map((input) => (
+          {[{ name: "title", label: "Title", type: "text" },
+            { name: "link", label: "Link", type: "text" }].map((input) => (
             <div key={input.name} className="relative z-0 w-full group">
               <input
                 type={input.type}
@@ -225,7 +249,11 @@ const Posts = () => {
               >
                 {input.label}
               </label>
-              {errors[input.name] && <p className="text-red-500 text-xs mt-1">{errors[input.name]}</p>}
+              {errors[input.name] && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors[input.name]}
+                </p>
+              )}
             </div>
           ))}
 
@@ -244,23 +272,36 @@ const Posts = () => {
             <label
               htmlFor="description"
               className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${
-                formData.description ? "-translate-y-6 scale-75 text-blue-600" : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
+                formData.description
+                  ? "-translate-y-6 scale-75 text-blue-600"
+                  : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
               }`}
             >
               Description
             </label>
-            {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+            {errors.description && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.description}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">
             <input type="file" accept="image/*" onChange={handleImageChange} />
             {previewImage && (
-              <img src={previewImage} alt="Preview" className="h-40 w-full object-cover rounded border" />
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="h-40 w-full object-cover rounded border"
+              />
             )}
           </div>
         </div>
 
-        <Button className="w-full h-11 text-lg font-medium shadow-sm hover:shadow-md transition" onClick={handleSave}>
+        <Button
+          className="w-full h-11 text-lg font-medium shadow-sm hover:shadow-md transition"
+          onClick={handleSave}
+        >
           {editingId ? "Update Post" : "Create Post"}
         </Button>
       </Modal>
