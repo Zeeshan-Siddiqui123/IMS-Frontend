@@ -13,11 +13,8 @@ interface Post {
   image: string;
 }
 
-// ✅ Hardcoded Base URL
-const API_BASE =
-  window.location.hostname === "localhost"
-    ? "http://localhost:3000"
-    : "https://ims-server-sage.vercel.app";
+const API_BASE = "http://localhost:3000"
+
 
 const Posts = () => {
   const [posts, setPosts] = useState<Post[]>([]);
