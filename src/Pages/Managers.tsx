@@ -144,10 +144,10 @@ const Managers: React.FC = () => {
               <TableHeader className="bg-neutral-100 dark:bg-neutral-800">
                 <TableRow>
                   <TableHead className="w-12 text-center">#</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Projects</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Projects</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -163,17 +163,17 @@ const Managers: React.FC = () => {
                       <TableCell className="flex gap-2 justify-end">
                         <Button
                           variant="default"
-                          size="sm"
+                          size="icon"
                           onClick={() => openEditModal(pm)}
-                          className="cursor-pointer"
+                          className="cursor-pointer rounded-full"
                         >
                           <MdEditSquare className="text-white" />
                         </Button>
                         <Button
                           variant="destructive"
-                          size="sm"
+                          size="icon"
                           onClick={() => handleDelete(pm._id)}
-                          className="cursor-pointer"
+                          className="cursor-pointer rounded-full"
 
                         >
                           <MdDeleteSweep className="text-white" />

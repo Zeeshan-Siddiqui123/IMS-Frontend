@@ -180,18 +180,20 @@ const Posts = () => {
                       Visit Link
                     </a>
                   )}
-                  <div className="flex justify-end gap-2 mt-4">
+                  <div className="flex justify-start gap-2 mt-4">
                     <Button
                       variant="default"
-                      size="sm"
+                      size="icon"
                       onClick={() => openEditModal(post)}
+                      className="cursor-pointer rounded-full"
                     >
                       <MdEditSquare className="text-white" />
                     </Button>
                     <Button
                       variant="destructive"
-                      size="sm"
+                      size="icon"
                       onClick={() => handleDelete(post._id)}
+                      className="cursor-pointer rounded-full"
                     >
                       <MdDeleteSweep className="text-white" />
                     </Button>
