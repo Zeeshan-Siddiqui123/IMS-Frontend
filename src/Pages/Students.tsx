@@ -179,17 +179,17 @@ const Students: React.FC = () => {
                       <TableCell className="flex gap-2 justify-end">
                         <Button
                           variant="default"
-                          size="sm"
+                          size="icon"
                           onClick={() => openEditModal(user)}
-                          className="cursor-pointer"
+                          className="cursor-pointer rounded-full"
                         >
                           <MdEditSquare className="text-white" />
                         </Button>
                         <Button
                           variant="destructive"
-                          size="sm"
+                          size="icon"
                           onClick={() => handleDelete(user._id)}
-                          className="cursor-pointer"
+                          className="cursor-pointer rounded-full"
 
                         >
                           <MdDeleteSweep className="text-white" />
