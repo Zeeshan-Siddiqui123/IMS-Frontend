@@ -130,7 +130,7 @@ const Managers: React.FC = () => {
       <div className="min-h-screen w-full p-6">
         <UrlBreadcrumb />
         <div className="flex justify-between items-center mb-6 mt-5">
-          <h2 className="text-2xl font-bold">Registered PMs</h2>
+          <h2 className="text-2xl font-bold">Registered Project Managers</h2>
           <Button onClick={() => setIsModalOpen(true)} className="cursor-pointer">Add PM</Button>
         </div>
 
