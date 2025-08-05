@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { postRepo } from "@/repositories/postRepo";
 import UrlBreadcrumb from "@/components/UrlBreadcrumb";
 import { MdDeleteSweep, MdEditSquare } from "react-icons/md";
+import Loader from "@/components/Loader";
 
 interface Post {
   _id: string;
@@ -147,9 +148,7 @@ const Posts = () => {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-40">
-          <Spin size="large" />
-        </div>
+        <Loader/>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {posts.length > 0 ? (
