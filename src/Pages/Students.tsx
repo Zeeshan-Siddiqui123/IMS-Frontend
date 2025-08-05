@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table"
 import { userRepo } from "@/repositories/userRepo"
 import UrlBreadcrumb from "@/components/UrlBreadcrumb"
+import Loader from "@/components/Loader"
 
 
 
@@ -148,9 +149,7 @@ const Students: React.FC = () => {
 
         <div className="rounded-lg border shadow-sm bg-white dark:bg-neutral-900">
           {loading ? (
-            <div className="flex justify-center items-center h-40">
-              <Spin size="large" />
-            </div>
+            <Loader/>
           ) : (
             <Table>
               <TableHeader className="bg-neutral-100 dark:bg-neutral-800">
