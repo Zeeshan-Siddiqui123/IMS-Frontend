@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Modal, message, Spin } from "antd";
+import { Modal, message } from "antd";
 import { Button } from "@/components/ui/button";
 import { postRepo } from "@/repositories/postRepo";
 import UrlBreadcrumb from "@/components/UrlBreadcrumb";
