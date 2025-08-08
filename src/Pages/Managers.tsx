@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table"
 import UrlBreadcrumb from "@/components/UrlBreadcrumb"
 import { pmRepo } from "@/repositories/pmRepo"
+import { CiUnread, CiRead } from "react-icons/ci";
 import Loader from "@/components/Loader"
 
 interface PM {
@@ -29,6 +30,7 @@ interface PM {
 const Managers: React.FC = () => {
   const [pms, setPms] = useState<PM[]>([])
   const [loading, setLoading] = useState(true)
+  const [showPassword, setShowPassword] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -174,24 +176,45 @@ const Managers: React.FC = () => {
             { name: "email", label: "Email", type: "email" },
             { name: "role", label: "Role", type: "text" },
             { name: "projects", label: "Projects", type: "text" },
-            !editingId && { name: "password", label: "Password", type: "password" },
+            !editingId && { name: "password", label: "Password", type: showPassword ? 'text' : 'password' },
           ].filter(Boolean).map((input: any) => (
             <div key={input.name} className="relative z-0 w-full group">
-              <input
-                type={input.type}
-                name={input.name}
-                id={input.name}
-                value={(formData as any)[input.name]}
-                onChange={handleChange}
-                className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0 
-                ${errors[input.name] ? "border-red-500" : "border-gray-300"}`} autoComplete="off"
-              />
-              <label htmlFor={input.name} className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 
-                ${(formData as any)[input.name] ? "-translate-y-6 scale-75 text-blue-600" : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"}`}>
-                {input.label}
-              </label>
-              {errors[input.name] && <p className="text-red-500 text-xs mt-1">{errors[input.name]}</p>}
-            </div>
+                  <input
+                    type={input.type}
+                    name={input.name}
+                    id={input.name}
+                    value={(formData as any)[input.name]}
+                    onChange={handleChange}
+                    className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0
+      ${errors[input.name] ? "border-red-500" : "border-gray-300"}`}
+                    placeholder=" "
+                    autoComplete="off"
+                  />
+                  <label
+                    htmlFor={input.name}
+                    className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 
+      ${(formData as any)[input.name]
+                        ? "-translate-y-6 scale-75 text-blue-600"
+                        : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
+                      }`}
+                  >
+                    {input.label}
+                  </label>
+
+                  {/* Show/hide password toggle */}
+                  {input.name === "password" && (
+                    <span
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-3 text-gray-500 cursor-pointer text-sm select-none"
+                    >
+                      {showPassword ? <CiUnread color="gray"/> : <CiRead color="black"/>}
+                    </span>
+                  )}
+
+                  {errors[input.name] && (
+                    <p className="text-red-500 text-xs mt-1">{errors[input.name]}</p>
+                  )}
+                </div>
           ))}
         </div>
         <Button className="w-full h-11 text-lg font-medium shadow-sm hover:shadow-md transition" onClick={handleSave}>

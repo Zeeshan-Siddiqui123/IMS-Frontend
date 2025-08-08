@@ -13,7 +13,7 @@ import {
 import { userRepo } from "@/repositories/userRepo"
 import UrlBreadcrumb from "@/components/UrlBreadcrumb"
 import Loader from "@/components/Loader"
-
+import { CiUnread, CiRead } from "react-icons/ci";
 
 
 interface User {
@@ -32,6 +32,7 @@ const Students: React.FC = () => {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -149,7 +150,7 @@ const Students: React.FC = () => {
 
         <div className="rounded-lg border shadow-sm bg-white dark:bg-neutral-900">
           {loading ? (
-            <Loader/>
+            <Loader />
           ) : (
             <Table>
               <TableHeader className="bg-neutral-100 dark:bg-neutral-800">
@@ -231,7 +232,7 @@ const Students: React.FC = () => {
               { name: "phone", label: "Phone", type: "text" },
               { name: "CNIC", label: "CNIC", type: "text" },
               { name: "course", label: "Course", type: "text" },
-              !editingId && { name: "password", label: "Password", type: "password" },
+              !editingId && { name: "password", label: "Password", type: showPassword ? 'text' : 'password' },
             ]
               .filter(Boolean)
               .map((input: any) => (
@@ -243,9 +244,8 @@ const Students: React.FC = () => {
                     value={(formData as any)[input.name]}
                     onChange={handleChange}
                     className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0
-      ${errors[input.name] ? "border-red-500" : "border-gray-300"}
-    `}
-                    placeholder=" " // ye chahiye floating ke liye
+      ${errors[input.name] ? "border-red-500" : "border-gray-300"}`}
+                    placeholder=" "
                     autoComplete="off"
                   />
                   <label
@@ -258,10 +258,22 @@ const Students: React.FC = () => {
                   >
                     {input.label}
                   </label>
+
+                  {/* Show/hide password toggle */}
+                  {input.name === "password" && (
+                    <span
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-3 text-gray-500 cursor-pointer text-sm select-none"
+                    >
+                      {showPassword ? <CiUnread color="gray"/> : <CiRead color="black"/>}
+                    </span>
+                  )}
+
                   {errors[input.name] && (
                     <p className="text-red-500 text-xs mt-1">{errors[input.name]}</p>
                   )}
                 </div>
+
 
               ))}
           </div>
