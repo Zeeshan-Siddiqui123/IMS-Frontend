@@ -15,13 +15,13 @@ export class TeamRepo {
 
   // Delete user by ID
   async deleteTeam(id: string) {
-    const response = await api.delete(`/team/delete/${id}`)
+    const response = await api.delete(`/admin/team/${id}`)
     return response.data
   }
 
   // Update user by ID (Optional)
   async updateTeam(id: string, teamData: any) {
-    const response = await api.put(`/team/update/${id}`, teamData)
+    const response = await api.put(`/admin/team/${id}`, teamData)
     return response.data
   }
 }
