@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { message, Modal } from "antd"
+import { message, Modal, Select } from "antd"
 import { teamRepo } from "@/repositories/teamRepo"
 import { userRepo } from "@/repositories/userRepo"
 import Loader from "@/components/Loader"
@@ -15,6 +15,7 @@ const Teams = () => {
   const [allUsers, setAllUsers] = useState<any[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [formData, setFormData] = useState({
     teamName: "",
     teamLeader: "",
@@ -22,6 +23,7 @@ const Teams = () => {
     field: ""
   })
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [memberSearch, setMemberSearch] = useState("")
 
   const fetchTeams = async () => {
     try {
@@ -53,12 +55,7 @@ const Teams = () => {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleMultiSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = Array.from(e.target.selectedOptions, (option) => option.value)
-    setFormData((prev) => ({ ...prev, members: selected }))
-  }
-
-  const handleSubmit = async () => {
+  const handleSave = async () => {
     try {
       if (editingId) {
         await teamRepo.updateTeam(editingId, formData)
@@ -67,39 +64,57 @@ const Teams = () => {
         await teamRepo.addTeams(formData)
         message.success("Team added successfully")
       }
-      fetchTeams()
       setIsModalOpen(false)
       resetForm()
-    } catch {
-      message.error("Failed to submit team")
+      fetchTeams()
+    } catch (error: any) {
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors)
+      } else {
+        message.error(error.response?.data?.message || "Action failed")
+      }
     }
   }
 
-  const handleDelete = async (id: string) => {
-    try {
-      await teamRepo.deleteTeam(id)
-      message.success("Deleted")
-      fetchTeams()
-    } catch {
-      message.error("Failed to delete")
-    }
+  const handleDelete = (id: string) => {
+    Modal.confirm({
+      title: "Are you sure you want to delete this team?",
+      okText: "Yes, Delete",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          await teamRepo.deleteTeam(id)
+          setTeams((prev) => prev.filter((team) => team._id !== id))
+          message.success("Team deleted successfully")
+        } catch {
+          message.error("Failed to delete team")
+        }
+      },
+    })
   }
+
 
   const openEditModal = (team: any) => {
     setFormData({
-      teamName: team.name,
+      teamName: team.teamName,
       teamLeader: team.teamLeader,
       members: team.members.map((m: any) => m._id || m),
       field: team.field
-    })
-    setEditingId(team._id)
-    setIsModalOpen(true)
-  }
+    });
+    setEditingId(team._id);
+    setIsModalOpen(true);
+  };
+
 
   const resetForm = () => {
     setFormData({ teamName: "", teamLeader: "", members: [], field: "" })
     setEditingId(null)
+    setMemberSearch("")
   }
+
+  // Filter users based on search input
+
   return (
     <div className="min-h-screen w-full p-6">
       <UrlBreadcrumb />
@@ -132,10 +147,10 @@ const Teams = () => {
                   <TableCell>
                     {team.members && team.members.length > 0
                       ? team.members.map((m: any, i: number) => (
-                          <span key={i} className="inline-block mr-1 text-sm bg-gray-200 px-2 py-1 rounded">
-                            {m.name || m}
-                          </span>
-                        ))
+                        <span key={i} className="inline-block mr-1 text-sm bg-gray-200 px-2 py-1 rounded">
+                          {m.name || m}
+                        </span>
+                      ))
                       : "—"}
                   </TableCell>
                   <TableCell>{team.field}</TableCell>
@@ -162,13 +177,15 @@ const Teams = () => {
           setIsModalOpen(false)
           resetForm()
         }}
-        onOk={handleSubmit}
+        onOk={handleSave}
         okText={editingId ? "Update" : "Create"}
       >
+        {/* Team Name */}
         {/* Team Name */}
         <div className="mb-4">
           <Label htmlFor="teamName">Team Name</Label>
           <Input
+            id="teamName"
             name="teamName"
             value={formData.teamName}
             onChange={handleChange}
@@ -179,6 +196,7 @@ const Teams = () => {
         <div className="mb-4">
           <Label htmlFor="teamLeader">Team Leader</Label>
           <Input
+            id="teamLeader"
             name="teamLeader"
             value={formData.teamLeader}
             onChange={handleChange}
@@ -188,30 +206,38 @@ const Teams = () => {
         {/* Members */}
         <div className="mb-4">
           <Label htmlFor="members">Members</Label>
-          <select
-            multiple
-            name="members"
-            value={formData.members}
-            onChange={handleMultiSelectChange}
-            className="w-full border border-gray-300 rounded px-2 py-2"
-          >
-            {allUsers.map((user) => (
-              <option key={user._id} value={user._id}>
-                {user.name}
-              </option>
-            ))}
-          </select>
+          <Select
+            id="members"
+            mode="multiple"
+            allowClear
+            showSearch
+            placeholder="Select team members"
+            value={Array.isArray(formData.members) ? formData.members : []} // always array
+            onChange={(selectedValues: string[]) => {
+              setFormData((prev) => ({ ...prev, members: selectedValues }));
+            }}
+            filterOption={(input, option) =>
+              (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+            }
+            options={allUsers.map((user) => ({
+              label: user.name,
+              value: user._id,
+            }))}
+            style={{ width: "100%" }}
+          />
         </div>
 
         {/* Field */}
         <div className="mb-4">
           <Label htmlFor="field">Field</Label>
           <Input
+            id="field"
             name="field"
             value={formData.field}
             onChange={handleChange}
           />
         </div>
+
       </Modal>
     </div>
   )
