@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { message, Modal, Select } from "antd"
 import { teamRepo } from "@/repositories/teamRepo"
@@ -16,6 +14,7 @@ const Teams = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [fieldEnumValues, setFieldEnumValues] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     teamName: "",
     teamLeader: "",
@@ -24,6 +23,9 @@ const Teams = () => {
   })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [memberSearch, setMemberSearch] = useState("")
+
+  console.log(memberSearch);
+  
 
   const fetchTeams = async () => {
     try {
@@ -49,6 +51,21 @@ const Teams = () => {
     fetchTeams()
     fetchUsers()
   }, [])
+
+
+  const fetchFields = async () => {
+    try {
+      const fields = await teamRepo.getfields()
+      setFieldEnumValues(fields)
+    } catch {
+      message.error("Failed to fetch users")
+    }
+  }
+
+  useEffect(() => {
+    fetchFields()
+  }, [])
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -139,106 +156,175 @@ const Teams = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teams.map((team, index) => (
-                <TableRow key={team._id}>
-                  <TableCell className="text-center">{index + 1}</TableCell>
-                  <TableCell>{team.teamName}</TableCell>
-                  <TableCell>{team.teamLeader}</TableCell>
-                  <TableCell>
-                    {team.members && team.members.length > 0
-                      ? team.members.map((m: any, i: number) => (
-                        <span key={i} className="inline-block mr-1 text-sm bg-gray-200 px-2 py-1 rounded">
-                          {m.name || m}
-                        </span>
-                      ))
-                      : "—"}
-                  </TableCell>
-                  <TableCell>{team.field}</TableCell>
-                  <TableCell className="flex gap-2 justify-end">
-                    <Button onClick={() => openEditModal(team)} size="icon" className="rounded-full">
-                      <MdEditSquare className="text-white" />
-                    </Button>
-                    <Button onClick={() => handleDelete(team._id)} variant="destructive" size="icon" className="rounded-full">
-                      <MdDeleteSweep className="text-white" />
-                    </Button>
+              {teams.length > 0 ? (
+                teams.map((team, index) => (
+                  <TableRow key={team._id}>
+                    <TableCell className="text-center">{index + 1}</TableCell>
+                    <TableCell>{team.teamName}</TableCell>
+                    <TableCell>{team.teamLeader}</TableCell>
+                    <TableCell>
+                      {team.members && team.members.length > 0
+                        ? team.members.map((m: any, i: number) => (
+                          <span
+                            key={i}
+                            className="inline-block mr-1 text-sm bg-gray-200 px-2 py-1 rounded"
+                          >
+                            {m.name || m}
+                          </span>
+                        ))
+                        : "—"}
+                    </TableCell>
+                    <TableCell>{team.field}</TableCell>
+                    <TableCell className="flex gap-2 justify-end">
+                      <Button
+                        onClick={() => openEditModal(team)}
+                        size="icon"
+                        className="rounded-full"
+                      >
+                        <MdEditSquare className="text-white" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDelete(team._id)}
+                        variant="destructive"
+                        size="icon"
+                        className="rounded-full"
+                      >
+                        <MdDeleteSweep className="text-white" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                    No teams found
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         )}
       </div>
 
+
       {/* Ant Design Modal */}
       <Modal
+        title={
+          <span className="text-xl font-semibold mb-3 text-center">
+            {editingId ? "Edit Team" : "Create Team"}
+          </span>
+        }
         open={isModalOpen}
-        title={editingId ? "Edit Team" : "Add Team"}
         onCancel={() => {
-          setIsModalOpen(false)
-          resetForm()
+          setIsModalOpen(false);
+          resetForm();
         }}
-        onOk={handleSave}
-        okText={editingId ? "Update" : "Create"}
+        footer={null}
+        centered
       >
-        {/* Team Name */}
-        {/* Team Name */}
-        <div className="mb-4">
-          <Label htmlFor="teamName">Team Name</Label>
-          <Input
-            id="teamName"
-            name="teamName"
-            value={formData.teamName}
-            onChange={handleChange}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 mt-7">
+          {/* Text Inputs */}
+          {[
+            { name: "teamName", label: "Team Name", type: "text" },
+            { name: "teamLeader", label: "Team Leader", type: "text" },
+          ].map((input) => (
+            <div key={input.name} className="relative z-0 w-full group">
+              <input
+                type={input.type}
+                name={input.name}
+                id={input.name}
+                value={(formData as any)[input.name]}
+                onChange={handleChange}
+                className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 
+            text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0
+            ${errors[input.name] ? "border-red-500" : "border-gray-300"}`}
+                placeholder=" "
+                autoComplete="off"
+              />
+              <label
+                htmlFor={input.name}
+                className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 
+            ${(formData as any)[input.name]
+                    ? "-translate-y-6 scale-75 text-blue-600"
+                    : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
+                  }`}
+              >
+                {input.label}
+              </label>
+
+              {errors[input.name] && (
+                <p className="text-red-500 text-xs mt-1">{errors[input.name]}</p>
+              )}
+            </div>
+          ))}
+
+          {/* Field Dropdown */}
+          {/* Field Dropdown using AntD Select */}
+          <div className="relative z-0 w-full group">
+            <Select
+              placeholder="Select Field"
+              value={formData.field || undefined}
+              onChange={(value) => setFormData((prev) => ({ ...prev, field: value }))}
+              options={fieldEnumValues.map((field) => ({
+                label: field,
+                value: field,
+              }))}
+              style={{ width: "100%" }}
+              className="border-b-2 border-gray-300 focus:border-blue-600 bg-transparent"
+            />
+            <label
+              htmlFor="field"
+              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 
+      ${formData.field
+                  ? "-translate-y-6 scale-75 text-blue-600"
+                  : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
+                }`}
+            >
+              {/* Field */}
+            </label>
+            {errors.field && <p className="text-red-500 text-xs mt-1">{errors.field}</p>}
+          </div>
+
+
+
+          {/* Members Multi-Select */}
+          <div className="relative z-0 w-full group">
+            <Select
+              mode="multiple"
+              allowClear
+              showSearch
+              placeholder="Select members"
+              value={Array.isArray(formData.members) ? formData.members : []}
+              onChange={(selectedValues: string[]) => {
+                setFormData((prev) => ({ ...prev, members: selectedValues }));
+              }}
+              filterOption={(input, option) =>
+                (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+              }
+              options={allUsers.map((user) => ({
+                label: user.name,
+                value: user._id,
+              }))}
+              style={{ width: "100%" }}
+              className="border-b-2 border-gray-300 focus:border-blue-600 bg-transparent"
+            />
+            {/* <label className="block mt-1 text-gray-500 text-sm">Members</label> */}
+            {errors.members && (
+              <p className="text-red-500 text-xs mt-1">{errors.members}</p>
+            )}
+          </div>
         </div>
 
-        {/* Team Leader */}
-        <div className="mb-4">
-          <Label htmlFor="teamLeader">Team Leader</Label>
-          <Input
-            id="teamLeader"
-            name="teamLeader"
-            value={formData.teamLeader}
-            onChange={handleChange}
-          />
-        </div>
-
-        {/* Members */}
-        <div className="mb-4">
-          <Label htmlFor="members">Members</Label>
-          <Select
-            id="members"
-            mode="multiple"
-            allowClear
-            showSearch
-            placeholder="Select team members"
-            value={Array.isArray(formData.members) ? formData.members : []} // always array
-            onChange={(selectedValues: string[]) => {
-              setFormData((prev) => ({ ...prev, members: selectedValues }));
-            }}
-            filterOption={(input, option) =>
-              (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-            }
-            options={allUsers.map((user) => ({
-              label: user.name,
-              value: user._id,
-            }))}
-            style={{ width: "100%" }}
-          />
-        </div>
-
-        {/* Field */}
-        <div className="mb-4">
-          <Label htmlFor="field">Field</Label>
-          <Input
-            id="field"
-            name="field"
-            value={formData.field}
-            onChange={handleChange}
-          />
-        </div>
-
+        <Button
+          className="w-full h-11 text-lg font-medium shadow-sm hover:shadow-md transition"
+          onClick={handleSave}
+        >
+          {editingId ? "Update Team" : "Create Team"}
+        </Button>
       </Modal>
+
+
+
     </div>
   )
 }

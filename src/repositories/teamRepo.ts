@@ -7,6 +7,10 @@ export class TeamRepo {
     return response.data
   }
 
+  async getfields() {
+    const response = await api.get("/admin/team/fields")
+    return response.data
+  }
   // Add a new user
   async addTeams(teamData: any) {
     const response = await api.post("/admin/createteam", teamData)
