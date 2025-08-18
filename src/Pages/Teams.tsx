@@ -1,97 +1,116 @@
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { message, Modal, Select } from "antd"
-import { teamRepo } from "@/repositories/teamRepo"
-import { userRepo } from "@/repositories/userRepo"
-import Loader from "@/components/Loader"
-import UrlBreadcrumb from "@/components/UrlBreadcrumb"
-import { MdDeleteSweep, MdEditSquare } from "react-icons/md"
+import Loader from "@/components/Loader";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import UrlBreadcrumb from "@/components/UrlBreadcrumb";
+import { teamRepo } from "@/repositories/teamRepo";
+import { userRepo } from "@/repositories/userRepo";
+import { Input, message, Modal, Select } from "antd";
+import { useEffect, useState } from "react";
+import { MdDeleteSweep, MdEditSquare } from "react-icons/md";
 
 const Teams = () => {
-  const [teams, setTeams] = useState<any[]>([])
-  const [allUsers, setAllUsers] = useState<any[]>([])
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [teams, setTeams] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [fieldEnumValues, setFieldEnumValues] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     teamName: "",
     teamLeader: "",
     members: [] as string[],
     field: ""
-  })
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [memberSearch, setMemberSearch] = useState("")
+  });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  console.log(memberSearch);
-  
-
+  // ===== API Calls =====
   const fetchTeams = async () => {
     try {
-      const data = await teamRepo.getAllTeams()
-      setTeams(data)
-      setLoading(false)
+      const data = await teamRepo.getAllTeams();
+
+      const formatted = data.map((team: any) => {
+        const leader = team.members.find((m: any) => m.role === "Team Leader");
+        const members = team.members.filter((m: any) => m.role === "Member");
+
+        return {
+          ...team,
+          teamLeader: leader?.user, // UI ko direct user object milega
+          members: members.map((m: any) => m.user) // sirf user objects rakho
+        };
+      });
+
+      setTeams(formatted);
     } catch {
-      message.error("Failed to fetch teams")
-      setLoading(false)
+      message.error("Failed to fetch teams");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const fetchUsers = async () => {
     try {
-      const users = await userRepo.getAllUsers()
-      setAllUsers(users)
+      const users = await userRepo.getAllUsers();
+      setAllUsers(users);
     } catch {
-      message.error("Failed to fetch users")
+      message.error("Failed to fetch users");
     }
-  }
-
-  useEffect(() => {
-    fetchTeams()
-    fetchUsers()
-  }, [])
-
+  };
 
   const fetchFields = async () => {
     try {
-      const fields = await teamRepo.getfields()
-      setFieldEnumValues(fields)
+      const fields = await teamRepo.getfields();
+      setFieldEnumValues(fields);
     } catch {
-      message.error("Failed to fetch users")
+      message.error("Failed to fetch fields");
     }
-  }
+  };
 
   useEffect(() => {
-    fetchFields()
-  }, [])
-
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    fetchTeams();
+    fetchUsers();
+    fetchFields();
+  }, []);
 
   const handleSave = async () => {
     try {
+      // ✅ Team Leader ko members array ke andar add karo
+      const payload = {
+        teamName: formData.teamName,
+        field: formData.field,
+        members: [
+          {
+            user: formData.teamLeader, // leader ka id
+            role: "Team Leader"
+          },
+          ...formData.members
+            .filter((id: string) => id !== formData.teamLeader) // leader ko dobara member na banaye
+            .map((id: string) => ({
+              user: id,
+              role: "Member"
+            }))
+        ]
+      };
+
       if (editingId) {
-        await teamRepo.updateTeam(editingId, formData)
-        message.success("Team updated successfully")
+        await teamRepo.updateTeam(editingId, payload);
+        message.success("Team updated successfully");
       } else {
-        await teamRepo.addTeams(formData)
-        message.success("Team added successfully")
+        await teamRepo.addTeams(payload);
+        message.success("Team added successfully");
       }
-      setIsModalOpen(false)
-      resetForm()
-      fetchTeams()
+
+      setIsModalOpen(false);
+      resetForm();
+      fetchTeams();
     } catch (error: any) {
       if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors)
+        setErrors(error.response.data.errors);
       } else {
-        message.error(error.response?.data?.message || "Action failed")
+        message.error(error.response?.data?.message || "Action failed");
       }
     }
-  }
+  };
+
 
   const handleDelete = (id: string) => {
     Modal.confirm({
@@ -101,37 +120,38 @@ const Teams = () => {
       cancelText: "Cancel",
       onOk: async () => {
         try {
-          await teamRepo.deleteTeam(id)
-          setTeams((prev) => prev.filter((team) => team._id !== id))
-          message.success("Team deleted successfully")
+          await teamRepo.deleteTeam(id);
+          setTeams(prev => prev.filter(team => team._id !== id));
+          message.success("Team deleted successfully");
         } catch {
-          message.error("Failed to delete team")
+          message.error("Failed to delete team");
         }
       },
-    })
-  }
-
+    });
+  };
 
   const openEditModal = (team: any) => {
+    const leader = team.members.find((m: any) => m.role === "Team Leader");
+    const members = team.members.filter((m: any) => m.role === "Member");
+
     setFormData({
       teamName: team.teamName,
-      teamLeader: team.teamLeader,
-      members: team.members.map((m: any) => m._id || m),
+      teamLeader: leader?.user._id || "",
+      members: members.map((m: any) => m.user._id),
       field: team.field
     });
+
     setEditingId(team._id);
     setIsModalOpen(true);
   };
 
-
   const resetForm = () => {
-    setFormData({ teamName: "", teamLeader: "", members: [], field: "" })
-    setEditingId(null)
-    setMemberSearch("")
-  }
+    setFormData({ teamName: "", teamLeader: "", members: [], field: "" });
+    setEditingId(null);
+    setErrors({});
+  };
 
-  // Filter users based on search input
-
+  // ===== UI =====
   return (
     <div className="min-h-screen w-full p-6">
       <UrlBreadcrumb />
@@ -161,26 +181,23 @@ const Teams = () => {
                   <TableRow key={team._id}>
                     <TableCell className="text-center">{index + 1}</TableCell>
                     <TableCell>{team.teamName}</TableCell>
-                    <TableCell>{team.teamLeader}</TableCell>
+                    <TableCell>{team.teamLeader?.name || "—"}</TableCell>
                     <TableCell>
-                      {team.members && team.members.length > 0
+                      {team.members?.length
                         ? team.members.map((m: any, i: number) => (
                           <span
                             key={i}
                             className="inline-block mr-1 text-sm bg-gray-200 px-2 py-1 rounded"
                           >
-                            {m.name || m}
+                            {m?.name}
                           </span>
                         ))
                         : "—"}
                     </TableCell>
+
                     <TableCell>{team.field}</TableCell>
                     <TableCell className="flex gap-2 justify-end">
-                      <Button
-                        onClick={() => openEditModal(team)}
-                        size="icon"
-                        className="rounded-full"
-                      >
+                      <Button onClick={() => openEditModal(team)} size="icon" className="rounded-full">
                         <MdEditSquare className="text-white" />
                       </Button>
                       <Button
@@ -206,14 +223,9 @@ const Teams = () => {
         )}
       </div>
 
-
-      {/* Ant Design Modal */}
+      {/* Modal */}
       <Modal
-        title={
-          <span className="text-xl font-semibold mb-3 text-center">
-            {editingId ? "Edit Team" : "Create Team"}
-          </span>
-        }
+        title={<span className="text-xl font-semibold">{editingId ? "Edit Team" : "Create Team"}</span>}
         open={isModalOpen}
         onCancel={() => {
           setIsModalOpen(false);
@@ -223,110 +235,65 @@ const Teams = () => {
         centered
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 mt-7">
-          {/* Text Inputs */}
-          {[
-            { name: "teamName", label: "Team Name", type: "text" },
-            { name: "teamLeader", label: "Team Leader", type: "text" },
-          ].map((input) => (
-            <div key={input.name} className="relative z-0 w-full group">
-              <input
-                type={input.type}
-                name={input.name}
-                id={input.name}
-                value={(formData as any)[input.name]}
-                onChange={handleChange}
-                className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 
-            text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0
-            ${errors[input.name] ? "border-red-500" : "border-gray-300"}`}
-                placeholder=" "
-                autoComplete="off"
-              />
-              <label
-                htmlFor={input.name}
-                className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 
-            ${(formData as any)[input.name]
-                    ? "-translate-y-6 scale-75 text-blue-600"
-                    : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                  }`}
-              >
-                {input.label}
-              </label>
+          {/* Team Name */}
+          <Input
+            placeholder="Team Name"
+            value={formData.teamName}
+            onChange={(e) => setFormData((prev) => ({ ...prev, teamName: e.target.value }))}
+          />
+          {errors.teamName && <p className="text-red-500 text-xs">{errors.teamName}</p>}
 
-              {errors[input.name] && (
-                <p className="text-red-500 text-xs mt-1">{errors[input.name]}</p>
-              )}
-            </div>
-          ))}
+          {/* Leader */}
+          <Select
+            placeholder="Select Team Leader"
+            value={formData.teamLeader || undefined}
+            onChange={(value) => setFormData((prev) => ({ ...prev, teamLeader: value }))}
+            options={allUsers.map((user) => ({
+              label: user.name,
+              value: user._id
+            }))}
+            style={{ width: "100%" }}
+          />
+          {errors.teamLeader && <p className="text-red-500 text-xs">{errors.teamLeader}</p>}
 
-          {/* Field Dropdown */}
-          {/* Field Dropdown using AntD Select */}
-          <div className="relative z-0 w-full group">
-            <Select
-              placeholder="Select Field"
-              value={formData.field || undefined}
-              onChange={(value) => setFormData((prev) => ({ ...prev, field: value }))}
-              options={fieldEnumValues.map((field) => ({
-                label: field,
-                value: field,
-              }))}
-              style={{ width: "100%" }}
-              className="border-b-2 border-gray-300 focus:border-blue-600 bg-transparent"
-            />
-            <label
-              htmlFor="field"
-              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 
-      ${formData.field
-                  ? "-translate-y-6 scale-75 text-blue-600"
-                  : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                }`}
-            >
-              {/* Field */}
-            </label>
-            {errors.field && <p className="text-red-500 text-xs mt-1">{errors.field}</p>}
-          </div>
-
-
-
-          {/* Members Multi-Select */}
-          <div className="relative z-0 w-full group">
-            <Select
-              mode="multiple"
-              allowClear
-              showSearch
-              placeholder="Select members"
-              value={Array.isArray(formData.members) ? formData.members : []}
-              onChange={(selectedValues: string[]) => {
-                setFormData((prev) => ({ ...prev, members: selectedValues }));
-              }}
-              filterOption={(input, option) =>
-                (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-              }
-              options={allUsers.map((user) => ({
+          {/* Members */}
+          <Select
+            mode="multiple"
+            allowClear
+            placeholder="Select Members"
+            value={formData.members}
+            onChange={(values) => setFormData((prev) => ({ ...prev, members: values }))}
+            options={allUsers
+              .filter((user) => user._id !== formData.teamLeader)
+              .map((user) => ({
                 label: user.name,
-                value: user._id,
+                value: user._id
               }))}
-              style={{ width: "100%" }}
-              className="border-b-2 border-gray-300 focus:border-blue-600 bg-transparent"
-            />
-            {/* <label className="block mt-1 text-gray-500 text-sm">Members</label> */}
-            {errors.members && (
-              <p className="text-red-500 text-xs mt-1">{errors.members}</p>
-            )}
-          </div>
+            style={{ width: "100%" }}
+          />
+          {errors.members && <p className="text-red-500 text-xs">{errors.members}</p>}
+
+          {/* Field */}
+          <Select
+            placeholder="Select Field"
+            value={formData.field || undefined}
+            onChange={(value) => setFormData((prev) => ({ ...prev, field: value }))}
+            options={fieldEnumValues.map((field) => ({
+              label: field,
+              value: field
+            }))}
+            style={{ width: "100%" }}
+          />
+          {errors.field && <p className="text-red-500 text-xs">{errors.field}</p>}
         </div>
 
-        <Button
-          className="w-full h-11 text-lg font-medium shadow-sm hover:shadow-md transition"
-          onClick={handleSave}
-        >
+        <Button className="w-full h-11 text-lg font-medium" onClick={handleSave}>
           {editingId ? "Update Team" : "Create Team"}
         </Button>
       </Modal>
-
-
-
     </div>
-  )
-}
+  );
+};
+
 
 export default Teams

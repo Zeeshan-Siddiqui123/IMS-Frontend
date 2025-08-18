@@ -30,5 +30,4 @@ export class TeamRepo {
   }
 }
 
-// Create a single instance to use everywhere
 export const teamRepo = new TeamRepo()
