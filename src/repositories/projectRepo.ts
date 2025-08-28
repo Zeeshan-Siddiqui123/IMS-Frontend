@@ -1,26 +1,35 @@
 import api from "@/lib/axios"
 
 export class ProjectRepo {
-  // Fetch all projects
   async getAllProjects() {
     const response = await api.get("/admin/project")
     return response.data
   }
-  // Add a new user
-  async createProject(projectData: any) {
-    const response = await api.post("/admin/createproject", projectData)
+
+  async createProject(projectData: any,
+    //  isMultipart = false
+    ) {
+    const response = await api.post("/admin/createproject", projectData,
+    //    {
+    //   headers: isMultipart
+    //     ? { "Content-Type": "multipart/form-data" }
+    //     : { "Content-Type": "application/json" },
+    // }
+  )
     return response.data
   }
 
-  // Delete user by ID
   async deleteProject(id: string) {
     const response = await api.delete(`/admin/project/${id}`)
     return response.data
   }
 
-  // Update user by ID (Optional)
-  async updateProject(id: string, projectData: any) {
-    const response = await api.put(`/admin/project/${id}`, projectData)
+  async updateProject(id: string, projectData: any, isMultipart = false) {
+    const response = await api.put(`/admin/project/${id}`, projectData, {
+      headers: isMultipart
+        ? { "Content-Type": "multipart/form-data" }
+        : { "Content-Type": "application/json" },
+    })
     return response.data
   }
 }

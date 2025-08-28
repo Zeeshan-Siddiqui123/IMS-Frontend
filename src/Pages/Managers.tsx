@@ -128,7 +128,7 @@ const Managers: React.FC = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Projects</TableHead>
+                {/* <TableHead>Projects</TableHead> */}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -140,7 +140,7 @@ const Managers: React.FC = () => {
                     <TableCell>{pm.name}</TableCell>
                     <TableCell>{pm.email}</TableCell>
                     <TableCell>{pm.role}</TableCell>
-                    <TableCell>{pm.projects.join(", ")}</TableCell>
+                    {/* <TableCell>{pm.projects}</TableCell> */}
                     <TableCell className="flex gap-2 justify-end">
                       <Button variant="default" size="icon" onClick={() => openEditModal(pm)} className="cursor-pointer rounded-full">
                         <MdEditSquare className="text-white" />
