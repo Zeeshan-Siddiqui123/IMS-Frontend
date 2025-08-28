@@ -12,6 +12,7 @@ interface Project {
   _id: string;
   title: string;
   description: string;
+  file?: string;
   teamName: {
     _id: string;
     teamName: string;
@@ -30,6 +31,7 @@ const Projects = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [file, setFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -69,6 +71,7 @@ const Projects = () => {
       teamName: "",
       PM: "",
     });
+    setFile(null);
     setErrors({});
     setEditingId(null);
   };
@@ -82,18 +85,20 @@ const Projects = () => {
 
   const handleSave = async () => {
     try {
-      const payload = {
-        title: formData.title,
-        description: formData.description,
-        teamName: formData.teamName, // team ID
-        PM: formData.PM, // pm ID
-      };
+      const form = new FormData();
+      form.append("title", formData.title);
+      form.append("description", formData.description);
+      form.append("teamName", formData.teamName);
+      form.append("PM", formData.PM);
+      if (file) {
+        form.append("file", file);
+      }
 
       if (editingId) {
-        await projectRepo.updateProject(editingId, payload);
+        await projectRepo.updateProject(editingId, form, true); // true => multipart
         message.success("Project updated successfully");
       } else {
-        await projectRepo.createProject(payload);
+        await projectRepo.createProject(form, true); // true => multipart
         message.success("Project assigned successfully");
       }
       setIsModalOpen(false);
@@ -170,6 +175,22 @@ const Projects = () => {
                 <p className="text-sm">
                   <strong>Project Manager:</strong> {project.PM?.name}
                 </p>
+                {project.file && (
+                  <a
+                    // href={`http://localhost:3000/${project.file}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline text-sm mt-2 block"
+
+                  >
+                    <Button
+                      onClick={() => window.open(`http://localhost:3000/admin/download/${project._id}`, "_blank")}
+                    >
+                      Download PDF
+                    </Button>
+
+                  </a>
+                )}
                 <div className="flex justify-start gap-2 mt-4">
                   <Button
                     variant="default"
@@ -220,19 +241,17 @@ const Projects = () => {
               id="title"
               value={formData.title}
               onChange={handleChange}
-              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none ${
-                errors.title ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none ${errors.title ? "border-red-500" : "border-gray-300"
+                }`}
               placeholder=" "
               autoComplete="off"
             />
             <label
               htmlFor="title"
-              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${
-                formData.title
+              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${formData.title
                   ? "-translate-y-6 scale-75 text-blue-600"
                   : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-              }`}
+                }`}
             >
               Title
             </label>
@@ -248,9 +267,8 @@ const Projects = () => {
               id="teamName"
               value={formData.teamName}
               onChange={handleChange}
-              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 text-gray-900 focus:border-blue-600 focus:outline-none ${
-                errors.teamName ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 text-gray-900 focus:border-blue-600 focus:outline-none ${errors.teamName ? "border-red-500" : "border-gray-300"
+                }`}
             >
               <option value="">Select a Team</option>
               {teams.map((team) => (
@@ -277,9 +295,8 @@ const Projects = () => {
               id="PM"
               value={formData.PM}
               onChange={handleChange}
-              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 text-gray-900 focus:border-blue-600 focus:outline-none ${
-                errors.PM ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 text-gray-900 focus:border-blue-600 focus:outline-none ${errors.PM ? "border-red-500" : "border-gray-300"
+                }`}
             >
               <option value="">Select a Project Manager</option>
               {pms.map((pm) => (
@@ -307,18 +324,16 @@ const Projects = () => {
               rows={4}
               value={formData.description}
               onChange={handleChange}
-              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none ${
-                errors.description ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none ${errors.description ? "border-red-500" : "border-gray-300"
+                }`}
               placeholder=" "
             />
             <label
               htmlFor="description"
-              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${
-                formData.description
+              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${formData.description
                   ? "-translate-y-6 scale-75 text-blue-600"
                   : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-              }`}
+                }`}
             >
               Description
             </label>
@@ -326,6 +341,19 @@ const Projects = () => {
               <p className="text-red-500 text-xs mt-1">
                 {errors.description}
               </p>
+            )}
+          </div>
+
+          {/* File Upload */}
+          <div className="relative z-0 w-full group">
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
+            />
+            {errors.file && (
+              <p className="text-red-500 text-xs mt-1">{errors.file}</p>
             )}
           </div>
         </div>

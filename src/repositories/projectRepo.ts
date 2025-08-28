@@ -6,16 +6,12 @@ export class ProjectRepo {
     return response.data
   }
 
-  async createProject(projectData: any,
-    //  isMultipart = false
-    ) {
-    const response = await api.post("/admin/createproject", projectData,
-    //    {
-    //   headers: isMultipart
-    //     ? { "Content-Type": "multipart/form-data" }
-    //     : { "Content-Type": "application/json" },
-    // }
-  )
+  async createProject(projectData: any, isMultipart = false) {
+    const response = await api.post("/admin/createproject", projectData, {
+      headers: isMultipart
+        ? { "Content-Type": "multipart/form-data" }
+        : { "Content-Type": "application/json" },
+    })
     return response.data
   }
 
