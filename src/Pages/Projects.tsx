@@ -5,7 +5,8 @@ import { MdDeleteSweep, MdEditSquare } from "react-icons/md";
 import UrlBreadcrumb from "@/components/UrlBreadcrumb";
 import Loader from "@/components/Loader";
 import { projectRepo } from "@/repositories/projectRepo";
-
+import { teamRepo } from "@/repositories/teamRepo";
+import { pmRepo } from "@/repositories/pmRepo";
 
 interface Project {
   _id: string;
@@ -21,9 +22,10 @@ interface Project {
   };
 }
 
-
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [teams, setTeams] = useState<{ _id: string; teamName: string }[]>([]);
+  const [pms, setPms] = useState<{ _id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -36,6 +38,7 @@ const Projects = () => {
     PM: "",
   });
 
+  // Fetch projects
   const fetchProjects = async () => {
     try {
       const data = await projectRepo.getAllProjects();
@@ -44,6 +47,18 @@ const Projects = () => {
       message.error("Failed to fetch projects");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch teams and PMs for dropdown
+  const fetchDropdownData = async () => {
+    try {
+      const teamsData = await teamRepo.getAllTeams();
+      const pmsData = await pmRepo.getPMs();
+      setTeams(teamsData || []);
+      setPms(pmsData || []);
+    } catch {
+      message.error("Failed to fetch Teams or PMs");
     }
   };
 
@@ -59,7 +74,7 @@ const Projects = () => {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -67,11 +82,18 @@ const Projects = () => {
 
   const handleSave = async () => {
     try {
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        teamName: formData.teamName, // team ID
+        PM: formData.PM, // pm ID
+      };
+
       if (editingId) {
-        await projectRepo.updateProject(editingId, formData);
+        await projectRepo.updateProject(editingId, payload);
         message.success("Project updated successfully");
       } else {
-        await projectRepo.createProject(formData);
+        await projectRepo.createProject(payload);
         message.success("Project assigned successfully");
       }
       setIsModalOpen(false);
@@ -108,16 +130,16 @@ const Projects = () => {
     setFormData({
       title: project.title,
       description: project.description,
-      teamName: project.teamName?.teamName || "",
-      PM: project.PM?.name || "",
+      teamName: project.teamName?._id || "",
+      PM: project.PM?._id || "",
     });
     setEditingId(project._id);
     setIsModalOpen(true);
   };
 
-
   useEffect(() => {
     fetchProjects();
+    fetchDropdownData();
   }, []);
 
   return (
@@ -171,7 +193,6 @@ const Projects = () => {
           ) : (
             <p className="text-gray-500">No projects found</p>
           )}
-
         </div>
       )}
 
@@ -191,40 +212,94 @@ const Projects = () => {
         centered
       >
         <div className="grid grid-cols-1 gap-6 mb-6 mt-7">
-          {[
-            { name: "title", label: "Title", type: "text" },
-            { name: "teamName", label: "Team Name", type: "text" },
-            { name: "PM", label: "Project Manager", type: "text" },
-          ].map((input) => (
-            <div key={input.name} className="relative z-0 w-full group">
-              <input
-                type={input.type}
-                name={input.name}
-                id={input.name}
-                value={(formData as any)[input.name]}
-                onChange={handleChange}
-                className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0 ${errors[input.name] ? "border-red-500" : "border-gray-300"
-                  }`}
-                placeholder=" "
-                autoComplete="off"
-              />
-              <label
-                htmlFor={input.name}
-                className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${(formData as any)[input.name]
+          {/* Title Input */}
+          <div className="relative z-0 w-full group">
+            <input
+              type="text"
+              name="title"
+              id="title"
+              value={formData.title}
+              onChange={handleChange}
+              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none ${
+                errors.title ? "border-red-500" : "border-gray-300"
+              }`}
+              placeholder=" "
+              autoComplete="off"
+            />
+            <label
+              htmlFor="title"
+              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${
+                formData.title
                   ? "-translate-y-6 scale-75 text-blue-600"
                   : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                  }`}
-              >
-                {input.label}
-              </label>
-              {errors[input.name] && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors[input.name]}
-                </p>
-              )}
-            </div>
-          ))}
+              }`}
+            >
+              Title
+            </label>
+            {errors.title && (
+              <p className="text-red-500 text-xs mt-1">{errors.title}</p>
+            )}
+          </div>
 
+          {/* Team Dropdown */}
+          <div className="relative z-0 w-full group">
+            <select
+              name="teamName"
+              id="teamName"
+              value={formData.teamName}
+              onChange={handleChange}
+              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 text-gray-900 focus:border-blue-600 focus:outline-none ${
+                errors.teamName ? "border-red-500" : "border-gray-300"
+              }`}
+            >
+              <option value="">Select a Team</option>
+              {teams.map((team) => (
+                <option key={team._id} value={team._id}>
+                  {team.teamName}
+                </option>
+              ))}
+            </select>
+            <label
+              htmlFor="teamName"
+              className="absolute top-3 origin-[0] transform text-gray-500 duration-200 -translate-y-6 scale-75 text-blue-600"
+            >
+              Team Name
+            </label>
+            {errors.teamName && (
+              <p className="text-red-500 text-xs mt-1">{errors.teamName}</p>
+            )}
+          </div>
+
+          {/* PM Dropdown */}
+          <div className="relative z-0 w-full group">
+            <select
+              name="PM"
+              id="PM"
+              value={formData.PM}
+              onChange={handleChange}
+              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 text-gray-900 focus:border-blue-600 focus:outline-none ${
+                errors.PM ? "border-red-500" : "border-gray-300"
+              }`}
+            >
+              <option value="">Select a Project Manager</option>
+              {pms.map((pm) => (
+                <option key={pm._id} value={pm._id}>
+                  {pm.name}
+                </option>
+              ))}
+            </select>
+            <label
+              htmlFor="PM"
+              className="absolute top-3 origin-[0] transform text-gray-500 duration-200 -translate-y-6 scale-75 text-blue-600"
+            >
+              Project Manager
+            </label>
+            {errors.PM && (
+              <p className="text-red-500 text-xs mt-1">{errors.PM}</p>
+            )}
+          </div>
+
+          {/* Description */}
           <div className="relative z-0 w-full group">
             <textarea
               name="description"
@@ -232,16 +307,18 @@ const Projects = () => {
               rows={4}
               value={formData.description}
               onChange={handleChange}
-              className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0 ${errors.description ? "border-red-500" : "border-gray-300"
-                }`}
+              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none ${
+                errors.description ? "border-red-500" : "border-gray-300"
+              }`}
               placeholder=" "
             />
             <label
               htmlFor="description"
-              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${formData.description
-                ? "-translate-y-6 scale-75 text-blue-600"
-                : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                }`}
+              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${
+                formData.description
+                  ? "-translate-y-6 scale-75 text-blue-600"
+                  : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
+              }`}
             >
               Description
             </label>
