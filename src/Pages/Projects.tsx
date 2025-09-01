@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Modal, message } from "antd";
+import { Modal, Select, message } from "antd";
+const { Option } = Select;
 import { Button } from "@/components/ui/button";
 import { MdDeleteSweep, MdEditSquare } from "react-icons/md";
 import UrlBreadcrumb from "@/components/UrlBreadcrumb";
@@ -7,6 +8,7 @@ import Loader from "@/components/Loader";
 import { projectRepo } from "@/repositories/projectRepo";
 import { teamRepo } from "@/repositories/teamRepo";
 import { pmRepo } from "@/repositories/pmRepo";
+import { Link } from "react-router-dom";
 
 interface Project {
   _id: string;
@@ -95,10 +97,10 @@ const Projects = () => {
       }
 
       if (editingId) {
-        await projectRepo.updateProject(editingId, form, true); // true => multipart
+        await projectRepo.updateProject(editingId, form, true);
         message.success("Project updated successfully");
       } else {
-        await projectRepo.createProject(form, true); // true => multipart
+        await projectRepo.createProject(form, true);
         message.success("Project assigned successfully");
       }
       setIsModalOpen(false);
@@ -170,27 +172,34 @@ const Projects = () => {
                   {project.description}
                 </p>
                 <p className="text-sm mt-2">
-                  <strong>Team:</strong> {project.teamName?.teamName}
+                  <Link to={`/teams`}>
+                    <strong>Team:</strong> {project.teamName?.teamName}
+                  </Link>
+
                 </p>
                 <p className="text-sm">
-                  <strong>Project Manager:</strong> {project.PM?.name}
+                  <Link to={`/pm`}>
+                    <strong>Project Manager:</strong> {project.PM?.name}
+                  </Link>
                 </p>
-                {project.file && (
-                  <a
-                    // href={`http://localhost:3000/${project.file}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline text-sm mt-2 block"
 
-                  >
+                {project.file && (
+                  <div className="mt-3">
+
                     <Button
-                      onClick={() => window.open(`http://localhost:3000/admin/download/${project._id}`, "_blank")}
+                      className="mt-2"
+                      onClick={() =>
+                        window.open(
+                          `http://localhost:3000/admin/download/${project._id}`,
+                          "_blank"
+                        )
+                      }
                     >
                       Download PDF
                     </Button>
-
-                  </a>
+                  </div>
                 )}
+
                 <div className="flex justify-start gap-2 mt-4">
                   <Button
                     variant="default"
@@ -217,7 +226,7 @@ const Projects = () => {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Assign/Edit Modal */}
       <Modal
         title={
           <span className="text-xl font-semibold mb-3 text-center">
@@ -262,58 +271,38 @@ const Projects = () => {
 
           {/* Team Dropdown */}
           <div className="relative z-0 w-full group">
-            <select
-              name="teamName"
-              id="teamName"
-              value={formData.teamName}
-              onChange={handleChange}
-              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 text-gray-900 focus:border-blue-600 focus:outline-none ${errors.teamName ? "border-red-500" : "border-gray-300"
-                }`}
+            <Select
+              value={formData.teamName || undefined}
+              onChange={(value) => setFormData((prev) => ({ ...prev, teamName: value }))}
+              placeholder="Select a Team"
+              className="w-full"
             >
-              <option value="">Select a Team</option>
               {teams.map((team) => (
-                <option key={team._id} value={team._id}>
+                <Option key={team._id} value={team._id}>
                   {team.teamName}
-                </option>
+                </Option>
               ))}
-            </select>
-            <label
-              htmlFor="teamName"
-              className="absolute top-3 origin-[0] transform text-gray-500 duration-200 -translate-y-6 scale-75 text-blue-600"
-            >
-              Team Name
-            </label>
+            </Select>
             {errors.teamName && (
               <p className="text-red-500 text-xs mt-1">{errors.teamName}</p>
             )}
           </div>
 
-          {/* PM Dropdown */}
+          {/* PM Dropdown (AntD Select) */}
           <div className="relative z-0 w-full group">
-            <select
-              name="PM"
-              id="PM"
-              value={formData.PM}
-              onChange={handleChange}
-              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 text-gray-900 focus:border-blue-600 focus:outline-none ${errors.PM ? "border-red-500" : "border-gray-300"
-                }`}
+            <Select
+              value={formData.PM || undefined}
+              onChange={(value) => setFormData((prev) => ({ ...prev, PM: value }))}
+              placeholder="Select a Project Manager"
+              className="w-full"
             >
-              <option value="">Select a Project Manager</option>
               {pms.map((pm) => (
-                <option key={pm._id} value={pm._id}>
+                <Option key={pm._id} value={pm._id}>
                   {pm.name}
-                </option>
+                </Option>
               ))}
-            </select>
-            <label
-              htmlFor="PM"
-              className="absolute top-3 origin-[0] transform text-gray-500 duration-200 -translate-y-6 scale-75 text-blue-600"
-            >
-              Project Manager
-            </label>
-            {errors.PM && (
-              <p className="text-red-500 text-xs mt-1">{errors.PM}</p>
-            )}
+            </Select>
+            {errors.PM && <p className="text-red-500 text-xs mt-1">{errors.PM}</p>}
           </div>
 
           {/* Description */}
@@ -338,9 +327,7 @@ const Projects = () => {
               Description
             </label>
             {errors.description && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.description}
-              </p>
+              <p className="text-red-500 text-xs mt-1">{errors.description}</p>
             )}
           </div>
 
@@ -350,8 +337,9 @@ const Projects = () => {
               type="file"
               accept="application/pdf"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
+              // className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
             />
+              <p className="mt-2 text-sm text-gray-500">(Please upload a PDF file)</p>
             {errors.file && (
               <p className="text-red-500 text-xs mt-1">{errors.file}</p>
             )}

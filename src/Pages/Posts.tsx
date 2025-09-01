@@ -14,7 +14,6 @@ interface Post {
   image: string;
 }
 
-const API_BASE = "http://localhost:3000"
 
 
 const Posts = () => {
@@ -76,16 +75,23 @@ const Posts = () => {
       form.append("title", formData.title);
       form.append("description", formData.description);
       form.append("link", formData.link);
-      form.append("existingImage", formData.existingImage);
-      if (formData.image) form.append("image", formData.image);
-
+  
+      if (formData.image) {
+        // Agar nayi image select hui hai
+        form.append("image", formData.image);
+      } else if (formData.existingImage) {
+        // Agar edit mode hai aur user ne new image select nahi ki
+        form.append("existingImage", formData.existingImage);
+      }
+  
       if (editingId) {
-        await postRepo.updatePost(editingId, form);
+        await postRepo.updatePost(editingId, form); // ab form-data jayega
         message.success("Post updated successfully");
       } else {
         await postRepo.createPost(form);
         message.success("Post created successfully");
       }
+  
       setIsModalOpen(false);
       resetForm();
       fetchPosts();
@@ -97,7 +103,7 @@ const Posts = () => {
       }
     }
   };
-
+  
   const handleDelete = (id: string) => {
     Modal.confirm({
       title: "Are you sure you want to delete this post?",
@@ -124,13 +130,7 @@ const Posts = () => {
       image: null,
       existingImage: post.image,
     });
-    setPreviewImage(
-      post.image
-        ? `${API_BASE}${
-            post.image.startsWith("/") ? post.image : "/" + post.image
-          }`
-        : null
-    );
+    setPreviewImage(post.image || null);
     setEditingId(post._id);
     setIsModalOpen(true);
   };
@@ -148,7 +148,7 @@ const Posts = () => {
       </div>
 
       {loading ? (
-        <Loader/>
+        <Loader />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {posts.length > 0 ? (
@@ -158,9 +158,7 @@ const Posts = () => {
                 className="bg-white dark:bg-neutral-900 shadow rounded-lg overflow-hidden"
               >
                 <img
-                  src={`${API_BASE}${
-                    post.image.startsWith("/") ? post.image : "/" + post.image
-                  }`}
+                  src={post.image}
                   alt={post.title}
                   className="h-44 w-full object-cover"
                 />
@@ -223,7 +221,7 @@ const Posts = () => {
       >
         <div className="grid grid-cols-1 gap-6 mb-6 mt-7">
           {[{ name: "title", label: "Title", type: "text" },
-            { name: "link", label: "Link", type: "text" }].map((input) => (
+          { name: "link", label: "Link", type: "text" }].map((input) => (
             <div key={input.name} className="relative z-0 w-full group">
               <input
                 type={input.type}
@@ -231,19 +229,17 @@ const Posts = () => {
                 id={input.name}
                 value={(formData as any)[input.name]}
                 onChange={handleChange}
-                className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0 ${
-                  errors[input.name] ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0 ${errors[input.name] ? "border-red-500" : "border-gray-300"
+                  }`}
                 placeholder=" "
                 autoComplete="off"
               />
               <label
                 htmlFor={input.name}
-                className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${
-                  (formData as any)[input.name]
+                className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${(formData as any)[input.name]
                     ? "-translate-y-6 scale-75 text-blue-600"
                     : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                }`}
+                  }`}
               >
                 {input.label}
               </label>
@@ -262,18 +258,16 @@ const Posts = () => {
               rows={4}
               value={formData.description}
               onChange={handleChange}
-              className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0 ${
-                errors.description ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0 ${errors.description ? "border-red-500" : "border-gray-300"
+                }`}
               placeholder=" "
             />
             <label
               htmlFor="description"
-              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${
-                formData.description
+              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${formData.description
                   ? "-translate-y-6 scale-75 text-blue-600"
                   : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-              }`}
+                }`}
             >
               Description
             </label>

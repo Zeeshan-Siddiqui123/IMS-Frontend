@@ -12,14 +12,19 @@ export class PostRepo {
   }
 
   async createPost(postData: any) {
-    const response = await api.post("/admin/post", postData)
+    const response = await api.post("/admin/post", postData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
     return response.data
   }
 
   async updatePost(id: string, postData: any) {
-    const response = await api.put(`/admin/post/${id}`, postData)
-    return response.data
+    const response = await api.put(`/admin/post/${id}`, postData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
   }
+  
 
   async deletePost(id: string) {
     const response = await api.delete(`/admin/post/${id}`)
