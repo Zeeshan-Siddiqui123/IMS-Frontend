@@ -3,6 +3,7 @@ import { message } from "antd"
 import { CiUnread, CiRead } from "react-icons/ci"
 import { userRepo } from "../repositories/userRepo"
 import { Button } from "../components/ui/button"
+import { Link, useNavigate } from "react-router-dom"
 
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
@@ -12,6 +13,8 @@ const Login: React.FC = () => {
     password: "",
   })
 
+  const navigate = useNavigate()
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -19,10 +22,18 @@ const Login: React.FC = () => {
 
   const handleSubmit = async () => {
     try {
-      await userRepo.loginUser(formData) // 🔹 Use your login API
+      await userRepo.loginUser(formData) // 🔹 API call
       message.success("Login successful")
+
+      // 🔹 Save auth in localStorage
+      localStorage.setItem("auth", "true")
+
+      // 🔹 Clear form
       setFormData({ email: "", password: "" })
       setErrors({})
+
+      // 🔹 Redirect to Dashboard
+      navigate("/")
     } catch (error: any) {
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors)
@@ -36,48 +47,50 @@ const Login: React.FC = () => {
     <div className="max-w-md mx-auto p-6 mt-10 rounded-lg border shadow bg-white dark:bg-neutral-900">
       <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
 
-      <div className="grid grid-cols-1 gap-6 mb-6">
-        {[
-          { name: "email", label: "Email", type: "email" },
-          { name: "password", label: "Password", type: showPassword ? "text" : "password" },
-        ].map((input) => (
-          <div key={input.name} className="relative z-0 w-full group">
-            <input
-              type={input.type}
-              name={input.name}
-              id={input.name}
-              value={(formData as any)[input.name]}
+      <div className="space-y-5 mb-6">
+        {/* Email */}
+        <div>
+          <label htmlFor="email" className="block mb-1 text-gray-700 dark:text-gray-300">
+            Email
+          </label>
+          <input placeholder="Enter your Valid Email"
+            type="email"
+            name="email"
+            id="email"
+            value={formData.email}
+            onChange={handleChange}
+            className={`block w-full rounded-md border px-3 py-2 focus:border-blue-600 focus:outline-none 
+              ${errors.email ? "border-red-500" : "border-gray-300"}`}
+            autoComplete="off"
+          />
+          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+        </div>
+
+        {/* Password */}
+        <div>
+          <label htmlFor="password" className="block mb-1 text-gray-700 dark:text-gray-300">
+            Password
+          </label>
+          <div className="relative">
+            <input placeholder="Enter your Password"
+              type={showPassword ? "text" : "password"}
+              name="password"
+              id="password"
+              value={formData.password}
               onChange={handleChange}
-              className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0
-                ${errors[input.name] ? "border-red-500" : "border-gray-300"}`}
-              placeholder=" "
+              className={`block w-full rounded-md border px-3 py-2 focus:border-blue-600 focus:outline-none 
+                ${errors.password ? "border-red-500" : "border-gray-300"}`}
               autoComplete="off"
             />
-            <label
-              htmlFor={input.name}
-              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 
-                ${(formData as any)[input.name]
-                  ? "-translate-y-6 scale-75 text-blue-600"
-                  : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                }`}
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-2.5 text-gray-500 cursor-pointer text-lg select-none"
             >
-              {input.label}
-            </label>
-
-            {input.name === "password" && (
-              <span
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-3 text-gray-500 cursor-pointer text-sm select-none"
-              >
-                {showPassword ? <CiUnread color="gray" /> : <CiRead color="black" />}
-              </span>
-            )}
-
-            {errors[input.name] && (
-              <p className="text-red-500 text-xs mt-1">{errors[input.name]}</p>
-            )}
+              {showPassword ? <CiUnread /> : <CiRead />}
+            </span>
           </div>
-        ))}
+          {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+        </div>
       </div>
 
       <Button
@@ -86,6 +99,13 @@ const Login: React.FC = () => {
       >
         Login
       </Button>
+
+      <p className="text-center mt-3">
+        Don't have an account?{" "}
+        <Link to="/Signup" className="text-blue-600">
+          <u>Create</u>
+        </Link>
+      </p>
     </div>
   )
 }

@@ -5,34 +5,39 @@ import { AppSidebar } from "./components/app-sidebar";
 import Page from "./Pages/Dashboard";
 import SignUp from "./auth/SignUp";
 import Login from "./auth/Login";
-
+import PrivateRoute from "./auth/PrivateRoute.tsx";
 
 const App = () => {
   return (
-    <div>
-      <Router>
-        
-        <SidebarProvider style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }>
-        <AppSidebar variant="inset" />
-        <SidebarInset>
-          <SiteHeader />
-          <Routes>
-          <Route path="/" element={<Page />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/login" element={<Login />} />
-          </Routes>
-        </SidebarInset>
-        </SidebarProvider>
-          
-        
-      </Router>
-    </div>
-  )
-}
+    <Router>
+      <Routes>
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/login" element={<Login />} />
 
-export default App
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <SidebarProvider
+                style={
+                  {
+                    "--sidebar-width": "calc(var(--spacing) * 72)",
+                    "--header-height": "calc(var(--spacing) * 12)",
+                  } as React.CSSProperties
+                }
+              >
+                <AppSidebar variant="inset" />
+                <SidebarInset>
+                  <SiteHeader />
+                  <Page /> 
+                </SidebarInset>
+              </SidebarProvider>
+            </PrivateRoute>
+          }
+        />
+      </Routes>
+    </Router>
+  );
+};
+
+export default App;
