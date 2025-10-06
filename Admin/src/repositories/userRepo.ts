@@ -24,7 +24,14 @@ export class UserRepo {
     const response = await api.put(`/user/update/${id}`, userData)
     return response.data
   }
+
+  async getAllUserStatus() {
+    const response = await api.get("/user/status")
+    return response.data
+  }
 }
+
+
 
 // Create a single instance to use everywhere
 export const userRepo = new UserRepo()
