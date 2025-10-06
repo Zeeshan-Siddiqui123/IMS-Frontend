@@ -10,7 +10,9 @@ export class UserRepo {
 
   // Login user
   async loginUser(credentials: { email: string; password: string }) {
-    const response = await api.post("/user/login", credentials)
+    const response = await api.post("/user/login", credentials, {
+      withCredentials: true,  // ✅ Important for cookie
+    })
     return response.data
   }
 

@@ -20,29 +20,17 @@ const Login: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+
+
   const handleSubmit = async () => {
     try {
-      await userRepo.loginUser(formData) // 🔹 API call
+      const data = await userRepo.loginUser(formData)
       message.success("Login successful")
-
-      // 🔹 Save auth in localStorage
-      localStorage.setItem("auth", "true")
-
-      // 🔹 Clear form
-      setFormData({ email: "", password: "" })
-      setErrors({})
-
-      // 🔹 Redirect to Dashboard
       navigate("/")
     } catch (error: any) {
-      if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors)
-      } else {
-        message.error(error.response?.data?.message || "Login failed")
-      }
+      message.error(error.response?.data?.message || "Login failed")
     }
   }
-
   return (
     <div className="max-w-md mx-auto p-6 mt-10 rounded-lg border shadow bg-white dark:bg-neutral-900">
       <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
@@ -53,7 +41,8 @@ const Login: React.FC = () => {
           <label htmlFor="email" className="block mb-1 text-gray-700 dark:text-gray-300">
             Email
           </label>
-          <input placeholder="Enter your Valid Email"
+          <input
+            placeholder="Enter your Valid Email"
             type="email"
             name="email"
             id="email"
@@ -72,7 +61,8 @@ const Login: React.FC = () => {
             Password
           </label>
           <div className="relative">
-            <input placeholder="Enter your Password"
+            <input
+              placeholder="Enter your Password"
               type={showPassword ? "text" : "password"}
               name="password"
               id="password"

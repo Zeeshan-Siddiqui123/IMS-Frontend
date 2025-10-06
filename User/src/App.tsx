@@ -2,10 +2,10 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { SidebarInset, SidebarProvider } from "./components/ui/sidebar";
 import { SiteHeader } from "./components/site-header";
 import { AppSidebar } from "./components/app-sidebar";
-import Page from "./Pages/Dashboard";
 import SignUp from "./auth/SignUp";
 import Login from "./auth/Login";
 import PrivateRoute from "./auth/PrivateRoute.tsx";
+import Dashboard from "./Pages/Dashboard";
 
 const App = () => {
   return (
@@ -29,7 +29,7 @@ const App = () => {
                 <AppSidebar variant="inset" />
                 <SidebarInset>
                   <SiteHeader />
-                  <Page /> 
+                  <Dashboard /> 
                 </SidebarInset>
               </SidebarProvider>
             </PrivateRoute>
