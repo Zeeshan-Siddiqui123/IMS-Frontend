@@ -16,6 +16,13 @@ export class UserRepo {
     return response.data
   }
 
+  async me() {
+    const response = await api.get("/user/me", {
+      withCredentials: true,  // ✅ Important for cookie
+    })
+    return response.data
+  }
+
   // Update user by ID
   async updateUser(id: string, userData: any) {
     const response = await api.put(`/user/update/${id}`, userData)

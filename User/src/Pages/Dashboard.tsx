@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import api from "@/lib/axios"
-import Attendance from "@/components/Attendance"
+import Attendance from "../components/Attendance"
+import { userRepo } from "../repositories/userRepo"
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null)
@@ -8,7 +8,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await api.get("/user/me", { withCredentials: true })
+        const res = await userRepo.me()
         setUser(res.data)
       } catch (err) {
         console.error("Failed to fetch user:", err)

@@ -25,10 +25,16 @@ const Login: React.FC = () => {
   const handleSubmit = async () => {
     try {
       const data = await userRepo.loginUser(formData)
+      console.log(data);
+      
       message.success("Login successful")
       navigate("/")
     } catch (error: any) {
       message.error(error.response?.data?.message || "Login failed")
+      setErrors({
+        email: error.response?.data?.message || "Login failed",
+        password: error.response?.data?.message || "Login failed",
+      })
     }
   }
   return (
