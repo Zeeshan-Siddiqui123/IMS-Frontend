@@ -30,7 +30,6 @@ const Login: React.FC = () => {
       message.success("Login successful")
       navigate("/")
     } catch (error: any) {
-      message.error(error.response?.data?.message || "Login failed")
       setErrors({
         email: error.response?.data?.message || "Login failed",
         password: error.response?.data?.message || "Login failed",
