@@ -64,19 +64,19 @@ export class UserRepo {
   }
 
   async updateUser(id: string, userData: Partial<SignUpData>) {
-    const { data } = await api.put(`${this.baseUrl}/update/${id}`, userData, {
+    const { data } = await api.put(`update/${id}`, userData, {
       withCredentials: true,
     })
     return data
   }
 
   async getCourses(): Promise<string[]> {
-    const { data } = await api.get(`${this.baseUrl}/course`)
+    const { data } = await api.get(`course`)
     return data
   }
 
   async logout() {
-    const { data } = await api.post(`${this.baseUrl}/logout`, {}, {
+    const { data } = await api.post(`logout`, {}, {
       withCredentials: true,
     })
     return data

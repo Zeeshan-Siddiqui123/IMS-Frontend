@@ -15,14 +15,7 @@ const App = () => {
         <Route path="/login" element={<Login />} />
 
         {/* Protected routes with layout */}
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <UserLayout />
-            </PrivateRoute>
-          }
-        >
+        <Route path="/" element={<PrivateRoute> <UserLayout /> </PrivateRoute>}>
           <Route index element={<Dashboard />} />
           {/* Add more protected routes here */}
           {/* <Route path="attendance" element={<Attendance />} /> */}
