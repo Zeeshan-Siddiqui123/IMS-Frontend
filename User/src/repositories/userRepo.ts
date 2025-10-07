@@ -1,40 +1,86 @@
+// repositories/userRepo.ts
 import api from "../lib/axios"
 
-export class UserRepo {
-  // Fetch all users (future use)
-  // Add a new user (Sign Up)
-  async addUser(userData: any) {
-    const response = await api.post("/user/signup", userData)
-    return response.data
-  }
+interface SignUpData {
+  name: string
+  bq_id: string
+  email: string
+  password: string
+  phone: string
+  CNIC: string
+  course: string
+}
 
-  // Login user
-  async loginUser(credentials: { email: string; password: string }) {
-    const response = await api.post("/user/login", credentials, {
-      withCredentials: true,  // ✅ Important for cookie
-    })
-    return response.data
-  }
+interface LoginCredentials {
+  email: string
+  password: string
+}
 
-  async me() {
-    const response = await api.get("/user/me", {
-      withCredentials: true,  // ✅ Important for cookie
-    })
-    return response.data
+interface LoginResponse {
+  user: {
+    id: string
+    name: string
+    email: string
+    bq_id: string
+    phone: string
+    CNIC: string
+    course: string
   }
+  message?: string
+}
 
-  // Update user by ID
-  async updateUser(id: string, userData: any) {
-    const response = await api.put(`/user/update/${id}`, userData)
-    return response.data
-  }
-
-  // ✅ Fetch course list (enum values)
-  async getCourses(): Promise<string[]> {
-    const response = await api.get("/user/course") // backend route: /api/courses
-    return response.data
+interface MeResponse {
+  data: {
+    id: string
+    name: string
+    email: string
+    bq_id: string
+    phone: string
+    CNIC: string
+    course: string
   }
 }
 
-// Create a single instance to use everywhere
+export class UserRepo {
+  // private readonly baseUrl = "/user"
+
+  async addUser(userData: SignUpData) {
+    const { data } = await api.post(`signup`, userData)
+    return data
+  }
+
+  async loginUser(credentials: LoginCredentials): Promise<LoginResponse> {
+    const { data } = await api.post(`login`, credentials, {
+      withCredentials: true,
+    })
+    return data
+  }
+
+  async me(): Promise<MeResponse> {
+    const { data } = await api.get(`me`, {
+      withCredentials: true,
+    })
+    return data
+  }
+
+  async updateUser(id: string, userData: Partial<SignUpData>) {
+    const { data } = await api.put(`${this.baseUrl}/update/${id}`, userData, {
+      withCredentials: true,
+    })
+    return data
+  }
+
+  async getCourses(): Promise<string[]> {
+    const { data } = await api.get(`${this.baseUrl}/course`)
+    return data
+  }
+
+  async logout() {
+    const { data } = await api.post(`${this.baseUrl}/logout`, {}, {
+      withCredentials: true,
+    })
+    return data
+  }
+}
+
 export const userRepo = new UserRepo()

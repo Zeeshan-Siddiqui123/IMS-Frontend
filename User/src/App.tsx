@@ -1,43 +1,40 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { SidebarInset, SidebarProvider } from "./components/ui/sidebar";
-import { SiteHeader } from "./components/site-header";
-import { AppSidebar } from "./components/app-sidebar";
-import SignUp from "./auth/SignUp";
-import Login from "./auth/Login";
-import PrivateRoute from "./auth/PrivateRoute.tsx";
-import Dashboard from "./Pages/Dashboard";
+// App.tsx
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
+import SignUp from "./auth/SignUp"
+import Login from "./auth/Login"
+import PrivateRoute from "./auth/PrivateRoute"
+import Dashboard from "./Pages/Dashboard"
+import UserLayout from "./components/layout/userLayout"
 
 const App = () => {
   return (
     <Router>
       <Routes>
+        {/* Public routes */}
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
 
+        {/* Protected routes with layout */}
         <Route
           path="/"
           element={
             <PrivateRoute>
-              <SidebarProvider
-                style={
-                  {
-                    "--sidebar-width": "calc(var(--spacing) * 72)",
-                    "--header-height": "calc(var(--spacing) * 12)",
-                  } as React.CSSProperties
-                }
-              >
-                <AppSidebar variant="inset" />
-                <SidebarInset>
-                  <SiteHeader />
-                  <Dashboard /> 
-                </SidebarInset>
-              </SidebarProvider>
+              <UserLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<Dashboard />} />
+          {/* Add more protected routes here */}
+          {/* <Route path="attendance" element={<Attendance />} /> */}
+          {/* <Route path="reports" element={<Reports />} /> */}
+          {/* <Route path="profile" element={<Profile />} /> */}
+        </Route>
+
+        {/* Catch all - redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
-  );
-};
+  )
+}
 
-export default App;
+export default App

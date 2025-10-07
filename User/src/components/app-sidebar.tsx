@@ -1,5 +1,5 @@
 import * as React from "react"
-import {Link} from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   IconCamera,
   IconChartBar,
@@ -11,7 +11,7 @@ import {
   IconListDetails,
   IconSettings,
 } from "@tabler/icons-react"
-
+import { APPNAME } from "@/lib/constant"
 
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -37,16 +37,6 @@ const data = {
       title: "Dashboard",
       url: "/",
       icon: IconDashboard,
-    },
-    {
-      title: "Signup",
-      url: "/signup",
-      icon: IconDashboard,
-    },
-    {
-      title: "Login",
-      url: "/login",
-      icon: IconListDetails,
     },
     {
       title: "Post",
@@ -146,7 +136,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <Link to="/">
                 <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Incubation Management System</span>
+                <span className="text-base font-semibold">{APPNAME}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
