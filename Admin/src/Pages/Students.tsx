@@ -55,9 +55,8 @@ const Students: React.FC = () => {
   const fetchUsers = async () => {
     try {
       const data = await userRepo.getAllUsers()
-      const status = await userRepo.getAllUserStatus()
       setUsers(data || [])
-      setStatusData(status || [])
+      // setStatusData(status || [])
     } catch {
       message.error("Failed to fetch users")
     } finally {

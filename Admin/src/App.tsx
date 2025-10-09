@@ -24,12 +24,12 @@ const App = () => {
         <SidebarInset>
           <SiteHeader />
           <Routes>
-          <Route path="/" element={<Page />} />
-          <Route path="/students" element={<Students />}/>
-          <Route path="/posts" element={<Posts />}/>
-          <Route path="/teams" element={<Teams />}/>
-          <Route path="/projects" element={<Projects />}/>
-          <Route path="/pm" element={<Managers />}/>
+          <Route path="/admin" element={<Page />} />
+          <Route path="/admin/students" element={<Students />}/>
+          <Route path="/admin/posts" element={<Posts />}/>
+          <Route path="/admin/teams" element={<Teams />}/>
+          <Route path="/admin/projects" element={<Projects />}/>
+          <Route path="/admin/pm" element={<Managers />}/>
           </Routes>
         </SidebarInset>
         </SidebarProvider>

@@ -25,10 +25,6 @@ export class UserRepo {
     return response.data
   }
 
-  async getAllUserStatus() {
-    const response = await api.get("/user/status")
-    return response.data
-  }
 }
 
 

@@ -42,27 +42,27 @@ const data = {
     },
     {
       title: "Students",
-      url: "/students",
+      url: "/admin/students",
       icon: IconListDetails,
     },
     {
       title: "Post",
-      url: "/posts",
+      url: "/admin/posts",
       icon: IconChartBar,
     },
     {
       title: "Projects",
-      url: "/projects",
+      url: "/admin/projects",
       icon: IconFolder,
     },
     {
       title: "Teams",
-      url: "/teams",
+      url: "/admin/teams",
       icon: IconUsers,
     },
     {
       title: "Project Managers",
-      url: "/pm",
+      url: "/admin/pm",
       icon: IconUsers,
     },
   ],

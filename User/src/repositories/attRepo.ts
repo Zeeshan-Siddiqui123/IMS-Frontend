@@ -1,29 +1,25 @@
 import api from "../lib/axios"
 
 export class AttRepo {
-
   async checkIn(userId: string) {
-    const response = await api.post(`/user/checkin/${userId}`)
+    const response = await api.post(`/attendance/checkin/${userId}`)
     return response.data
   }
-
 
   async checkOut(userId: string) {
-    const response = await api.post(`/user/checkout/${userId}`)
+    const response = await api.post(`/attendance/checkout/${userId}`)
     return response.data
   }
 
-
-  async getTodayAttendance(userId: string) {
-    const response = await api.get(`/attendance/${userId}`)
+  async getTodayStatus(userId: string) {
+    const response = await api.get(`/attendance/status/${userId}`)
     return response.data
   }
 
-  async getUserAttendanceHistory(userId: string) {
+  async getUserHistory(userId: string) {
     const response = await api.get(`/attendance/history/${userId}`)
     return response.data
   }
 }
 
-// Create a single instance to use everywhere
 export const attRepo = new AttRepo()
