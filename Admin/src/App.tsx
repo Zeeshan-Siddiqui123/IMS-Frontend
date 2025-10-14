@@ -8,6 +8,7 @@ import { SiteHeader } from "./components/site-header";
 import Teams from "./Pages/Teams";
 import Projects from "./Pages/Projects";
 import Managers from "./Pages/Managers";
+import Attendance from "./Pages/Attendance";
 
 const App = () => {
   return (
@@ -30,6 +31,7 @@ const App = () => {
           <Route path="/admin/teams" element={<Teams />}/>
           <Route path="/admin/projects" element={<Projects />}/>
           <Route path="/admin/pm" element={<Managers />}/>
+          <Route path="/admin/attendance" element={<Attendance />}/>
           </Routes>
         </SidebarInset>
         </SidebarProvider>

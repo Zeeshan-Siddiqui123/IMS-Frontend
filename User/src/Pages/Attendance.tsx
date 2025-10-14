@@ -1,147 +1,139 @@
-import React, { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { message } from "antd"
-import { CheckCircle2 } from "lucide-react"
-import { attRepo } from "@/repositories/attRepo"
+import React, { useEffect, useState } from "react";
+import { Table } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { attRepo } from "@/repositories/attRepo";
+import Loader from "@/components/Loader";
 
 interface AttendanceData {
-  status: string
-  checkInTime: string | null
-  checkOutTime: string | null
+  status: string;
+  checkInTime: string | null;
+  checkOutTime: string | null;
 }
 
 interface HistoryRecord {
-  _id: string
-  date: string
-  checkInTime: string | null
-  checkOutTime: string | null
-  status: string
+  _id: string;
+  date: string;
+  checkInTime: string | null;
+  checkOutTime: string | null;
+  status: string;
 }
 
 interface Props {
-  userId: string
+  userId: string;
 }
 
 const Attendance: React.FC<Props> = ({ userId }) => {
-  const [attendance, setAttendance] = useState<AttendanceData | null>(null)
-  const [history, setHistory] = useState<HistoryRecord[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isHistoryLoading, setIsHistoryLoading] = useState(false)
+  const [attendance, setAttendance] = useState<AttendanceData | null>(null);
+  const [history, setHistory] = useState<HistoryRecord[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
 
-  // ✅ Load today's attendance on mount
+  // ✅ Load today's attendance
   useEffect(() => {
     const fetchAttendance = async () => {
       try {
-        const res = await attRepo.getTodayStatus(userId)
-        setAttendance(res || null)
+        const res = await attRepo.getTodayStatus(userId);
+        setAttendance(res || null);
       } catch (err: any) {
-        console.error(err)
+        console.error(err);
       }
-    }
-    fetchAttendance()
-  }, [userId])
+    };
+    fetchAttendance();
+  }, [userId]);
 
-  // ✅ Load user attendance history on mount
+  // ✅ Load user attendance history
   useEffect(() => {
     const fetchHistory = async () => {
-      setIsHistoryLoading(true)
+      setIsHistoryLoading(true);
       try {
-        const res = await attRepo.getUserHistory(userId)
-        setHistory(res.history || [])
+        const res = await attRepo.getUserHistory(userId);
+        setHistory(res.history || []);
       } catch (err: any) {
-        console.error(err)
+        console.error(err);
       } finally {
-        setIsHistoryLoading(false)
+        setIsHistoryLoading(false);
       }
-    }
-    fetchHistory()
-  }, [userId])
+    };
+    fetchHistory();
+  }, [userId]);
 
-  const handleCheckIn = async () => {
-    setIsLoading(true)
-    try {
-      const res = await attRepo.checkIn(userId)
-      setAttendance(res.att)
-      message.success("Checked in successfully!")
-      refreshHistory()
-    } catch (err: any) {
-      message.error(err.response?.data?.error || "Check-in failed")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // ✅ Columns for Ant Design Table
+  const columns: ColumnsType<HistoryRecord> = [
+    {
+      title: "Date",
+      dataIndex: "date",
+      key: "date",
+      render: (text) => new Date(text).toLocaleDateString(),
+    },
+    {
+      title: "Check In",
+      dataIndex: "checkInTime",
+      key: "checkInTime",
+      render: (text) =>
+        text ? new Date(text).toLocaleTimeString() : "—",
+    },
+    {
+      title: "Check Out",
+      dataIndex: "checkOutTime",
+      key: "checkOutTime",
+      render: (text) =>
+        text ? new Date(text).toLocaleTimeString() : "—",
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+    },
+  ];
 
-  const handleCheckOut = async () => {
-    setIsLoading(true)
-    try {
-      const res = await attRepo.checkOut(userId)
-      setAttendance(res.att)
-      message.success("Checked out successfully!")
-      refreshHistory()
-    } catch (err: any) {
-      message.error(err.response?.data?.error || "Check-out failed")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // ✅ Helper to reload history after checkin/checkout
-  const refreshHistory = async () => {
-    try {
-      const res = await attRepo.getUserHistory(userId)
-      setHistory(res.history || [])
-    } catch (err) {
-      console.error(err)
-    }
-  }
+  const isCheckedIn = Boolean(attendance?.checkInTime);
+  const isCheckedOut = Boolean(attendance?.checkOutTime);
 
   return (
     <div className="flex flex-col gap-6">
+      <h2 className="text-lg font-semibold ml-5 mt-5">Today's Status</h2>
 
-      {/* ✅ User History Table */}
+      {isCheckedIn && (
+        <div className="bg-gray-100 dark:bg-neutral-800 p-3 rounded-md shadow-sm text-sm w-fit ml-5">
+          <p>
+            <span className="font-semibold">Status:</span>{" "}
+            {attendance?.status || (isCheckedOut ? "Checked Out" : "Checked In")}
+          </p>
+          <p>
+            <span className="font-semibold">Check-in Time:</span>{" "}
+            {attendance?.checkInTime
+              ? new Date(attendance.checkInTime).toLocaleTimeString()
+              : "—"}
+          </p>
+          <p>
+            <span className="font-semibold">Check-out Time:</span>{" "}
+            {attendance?.checkOutTime
+              ? new Date(attendance.checkOutTime).toLocaleTimeString()
+              : "Not checked out yet"}
+          </p>
+        </div>
+      )}
+
+      {/* ✅ History Table */}
       <div>
-        <h2 className="text-lg font-semibold mb-2">Your Attendance History</h2>
+        <h2 className="text-lg font-semibold mb-2 ml-5">Your Attendance History</h2>
         {isHistoryLoading ? (
-          <p>Loading history...</p>
-        ) : history.length === 0 ? (
-          <p className="text-sm text-gray-500">No records found.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border">
-              <thead className="bg-gray-200 dark:bg-neutral-700">
-                <tr>
-                  <th className="p-2 text-left">Date</th>
-                  <th className="p-2 text-left">Check In</th>
-                  <th className="p-2 text-left">Check Out</th>
-                  <th className="p-2 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((record) => (
-                  <tr key={record._id} className="border-t">
-                    <td className="p-2">
-                      {new Date(record.date).toLocaleDateString()}
-                    </td>
-                    <td className="p-2">
-                      {record.checkInTime
-                        ? new Date(record.checkInTime).toLocaleTimeString()
-                        : "—"}
-                    </td>
-                    <td className="p-2">
-                      {record.checkOutTime
-                        ? new Date(record.checkOutTime).toLocaleTimeString()
-                        : "—"}
-                    </td>
-                    <td className="p-2">{record.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex justify-center items-center py-4">
+            <Loader />
           </div>
+        ) : history.length === 0 ? (
+          <p className="text-sm text-gray-500 ml-5">No records found.</p>
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={history.map((item) => ({ ...item, key: item._id }))}
+            pagination={{ pageSize: 5 }}
+            bordered
+            className="ml-5 mr-5"
+          />
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Attendance
+export default Attendance;

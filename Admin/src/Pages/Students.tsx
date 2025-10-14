@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table"
 import { userRepo } from "@/repositories/userRepo"
 import Loader from "@/components/Loader"
+import { attendanceRepo } from "@/repositories/attendanceRepo"
 
 interface User {
   _id: string
@@ -54,11 +55,14 @@ const Students: React.FC = () => {
   // ✅ Fetch Users + Status
   const fetchUsers = async () => {
     try {
-      const data = await userRepo.getAllUsers()
-      setUsers(data || [])
-      // setStatusData(status || [])
-    } catch {
-      message.error("Failed to fetch users")
+      const [usersData, status] = await Promise.all([
+        userRepo.getAllUsers(),
+        attendanceRepo.getAllUserStatus(),
+      ])
+      setUsers(usersData || [])
+      setStatusData(status || [])
+    } catch (err) {
+      message.error("Failed to fetch users or attendance")
     } finally {
       setLoading(false)
     }

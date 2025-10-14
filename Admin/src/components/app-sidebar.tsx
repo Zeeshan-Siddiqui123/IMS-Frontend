@@ -27,6 +27,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { Check } from "lucide-react"
 
 const data = {
   user: {
@@ -64,6 +65,11 @@ const data = {
       title: "Project Managers",
       url: "/admin/pm",
       icon: IconUsers,
+    },
+    {
+      title: "Attendance",
+      url: "/admin/attendance",
+      icon: Check,
     },
   ],
   navClouds: [
