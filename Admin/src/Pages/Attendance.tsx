@@ -1,38 +1,17 @@
 import { useEffect, useState } from "react"
 import { attendanceRepo } from "@/repositories/attendanceRepo"
 import { Button } from "@/components/ui/button"
-import { Input, message } from "antd"
+import { Input, Select, Table, message } from "antd"
+import dayjs from "dayjs"
+
+const { Option } = Select
 
 const Attendance = () => {
   const [searchName, setSearchName] = useState("")
-  const [userHistory, setUserHistory] = useState<any[]>([])
   const [allHistory, setAllHistory] = useState<any[]>([])
+  const [filteredHistory, setFilteredHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
-
-  // 🔍 Search by Name
-  const handleSearch = async () => {
-    if (!searchName.trim()) {
-      // 🔁 If search is empty, show all history again
-      setUserHistory(allHistory)
-      return
-    }
-
-    try {
-      setLoading(true)
-      const res = await attendanceRepo.getUserHistoryByName(searchName)
-
-      const historyArray = Array.isArray(res)
-        ? res
-        : res?.history || []
-
-      setUserHistory(historyArray)
-    } catch (error) {
-      console.error("Error fetching user history:", error)
-      message.error("Failed to fetch user history")
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [dateFilter, setDateFilter] = useState("today")
 
   // 📥 Fetch All History on Mount
   const fetchAllHistory = async () => {
@@ -40,7 +19,7 @@ const Attendance = () => {
       setLoading(true)
       const data = await attendanceRepo.getAttendanceHistory()
       setAllHistory(data || [])
-      setUserHistory(data || []) 
+      filterByDate("today", data || []) // ⏰ default
     } catch (error) {
       console.error("Error fetching all history:", error)
       message.error("Failed to fetch history")
@@ -53,61 +32,153 @@ const Attendance = () => {
     fetchAllHistory()
   }, [])
 
+  // 🔍 Search by Name
+  const handleSearch = () => {
+    if (!searchName.trim()) {
+      filterByDate(dateFilter, allHistory)
+      return
+    }
+    const lowerName = searchName.toLowerCase()
+    const filtered = filteredHistory.filter((record) =>
+      record.user?.name?.toLowerCase().includes(lowerName)
+    )
+    setFilteredHistory(filtered)
+  }
+
+  // 🧠 Group Records by (User + Date)
+  const groupByUserAndDate = (data: any[]) => {
+    const map = new Map()
+    data.forEach((item) => {
+      const userId = item.user?._id || item.user?.id
+      const dateKey = dayjs(item.date).format("YYYY-MM-DD")
+      const key = `${userId}_${dateKey}`
+
+      if (!map.has(key)) {
+        map.set(key, {
+          key, // AntD Table needs a key
+          user: item.user,
+          date: dateKey,
+          status: item.status,
+          checkInTime: item.checkInTime,
+          checkOutTime: item.checkOutTime,
+        })
+      }
+    })
+    return Array.from(map.values())
+  }
+
+  // 📅 Date Filters
+  const filterByDate = (type: string, baseData = allHistory) => {
+    const today = dayjs()
+    let filtered: any[] = []
+
+    switch (type) {
+      case "today":
+        filtered = baseData.filter((rec) =>
+          dayjs(rec.date).isSame(today, "day")
+        )
+        break
+      
+        break
+      case "previousMonth":
+        const startPrev = today.subtract(1, "month").startOf("month")
+        const endPrev = today.subtract(1, "month").endOf("month")
+        filtered = baseData.filter((rec) => {
+          const d = dayjs(rec.date)
+          return d.isAfter(startPrev.subtract(1, "day")) && d.isBefore(endPrev.add(1, "day"))
+        })
+        break
+      case "overall":
+      default:
+        filtered = baseData
+        break
+    }
+
+    const grouped = groupByUserAndDate(filtered)
+    setFilteredHistory(grouped)
+  }
+
+  const handleDateFilterChange = (value: string) => {
+    setDateFilter(value)
+    filterByDate(value)
+  }
+
+  // 📝 Columns for AntD Table
+    const columns = [
+    {
+      title: "Name",
+      dataIndex: ["user", "name"],
+      key: "name",
+      render: (text: any) => text || "—",
+    },
+    {
+      title: (
+        <div className="flex flex-col">
+          <span>Date</span>
+          <Select
+            value={dateFilter}
+            onChange={handleDateFilterChange}
+            size="small"
+            style={{ width: 140, marginTop: 4 }}
+          >
+            <Option value="today">Today</Option>
+            <Option value="previousMonth">Previous Month</Option>
+            <Option value="overall">Overall</Option>
+            
+          </Select>
+        </div>
+      ),
+      dataIndex: "date",
+      key: "date",
+      render: (date: string) => dayjs(date).format("DD MMM YYYY"),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (text: string) => text || "—",
+    },
+    {
+      title: "Check In",
+      dataIndex: "checkInTime",
+      key: "checkInTime",
+      render: (time: string) =>
+        time ? new Date(time).toLocaleTimeString() : "—",
+    },
+    {
+      title: "Check Out",
+      dataIndex: "checkOutTime",
+      key: "checkOutTime",
+      render: (time: string) =>
+        time ? new Date(time).toLocaleTimeString() : "—",
+    },
+  ]
+
   return (
     <div className="p-6 space-y-4">
-      {/* 🔍 Search Bar */}
-      <div className="flex gap-2">
+      {/* 🔍 Search */}
+      <div className="flex flex-wrap gap-2 items-center">
         <Input
           placeholder="Enter User Name"
           value={searchName}
           onChange={(e) => setSearchName(e.target.value)}
+          className="w-60"
         />
         <Button onClick={handleSearch} disabled={loading}>
-          {loading ? "Searching..." : "Search"}
+          Search
         </Button>
       </div>
 
-      {/* 📊 Table */}
-      {userHistory.length > 0 ? (
-        <table className="w-full border mt-4">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="p-2 border">Name</th>
-              <th className="p-2 border">Date</th>
-              <th className="p-2 border">Status</th>
-              <th className="p-2 border">Check In</th>
-              <th className="p-2 border">Check Out</th>
-            </tr>
-          </thead>
-          <tbody>
-            {userHistory.map((record, index) => (
-              <tr key={index}>
-                <td className="p-2 border">
-                  {record.user?.name || "—"}
-                </td>
-                <td className="p-2 border">
-                  {record.date
-                    ? new Date(record.date).toLocaleDateString()
-                    : "—"}
-                </td>
-                <td className="p-2 border">{record.status || "—"}</td>
-                <td className="p-2 border">
-                  {record.checkInTime
-                    ? new Date(record.checkInTime).toLocaleTimeString()
-                    : "—"}
-                </td>
-                <td className="p-2 border">
-                  {record.checkOutTime
-                    ? new Date(record.checkOutTime).toLocaleTimeString()
-                    : "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        !loading && <p>No attendance history found.</p>
-      )}
+      {/* 📊 Ant Design Table */}
+      <Table
+        columns={columns}
+        dataSource={filteredHistory}
+        loading={loading}
+        pagination={false}
+        locale={{ emptyText: "No attendance records found." }}
+        className="mt-4"
+        bordered
+      />
     </div>
   )
 }
