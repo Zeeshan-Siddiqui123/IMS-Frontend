@@ -7,16 +7,5 @@
     {
       "path": "./tsconfig.node.json"
     }
-  ],
-  "compilerOptions": {
-    "skipLibCheck": true,
-    "noEmitOnError": false,
-    // "baseUrl": ".",
-    "baseUrl": "src",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    }
-  }
+  ]
 }
