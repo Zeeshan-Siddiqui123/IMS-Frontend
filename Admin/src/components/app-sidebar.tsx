@@ -1,5 +1,5 @@
 import * as React from "react"
-import {Link} from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   IconCamera,
   IconChartBar,
@@ -171,7 +171,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={data.navMain as any} /> 
+
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

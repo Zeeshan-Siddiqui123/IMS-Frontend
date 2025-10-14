@@ -1,6 +1,4 @@
-import {  type Icon } from "@tabler/icons-react"
-
-
+import type { ComponentType, SVGProps } from "react"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -16,27 +14,20 @@ export function NavMain({
   items: {
     title: string
     url: string
-    icon?: Icon
+    icon?: ComponentType<SVGProps<SVGSVGElement>>
   }[]
 }) {
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            
-            
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton tooltip={item.title}>
-                {item.icon && <item.icon />}
+                {item.icon && <item.icon className="w-5 h-5" />}
                 <Link to={item.url}>
                   <span>{item.title}</span>
                 </Link>
-
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
