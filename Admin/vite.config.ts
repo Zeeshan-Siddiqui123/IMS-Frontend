@@ -5,7 +5,7 @@ import { defineConfig } from "vite"
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/admin/",  // 👈 IMPORTANT: Yeh line add karo
+  base: "./",  // 👈 IMPORTANT: Yeh line add karo
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
