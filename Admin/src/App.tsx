@@ -25,7 +25,7 @@ const App = () => {
         <SidebarInset>
           <SiteHeader />
           <Routes>
-          <Route path="/admin" element={<Page />} />
+          <Route path="/" element={<Page />} />
           <Route path="/admin/students" element={<Students />}/>
           <Route path="/admin/posts" element={<Posts />}/>
           <Route path="/admin/teams" element={<Teams />}/>
