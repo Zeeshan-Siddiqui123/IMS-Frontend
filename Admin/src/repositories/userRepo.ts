@@ -3,25 +3,25 @@ import api from "../lib/axios"
 export class UserRepo {
   // Fetch all users
   async getAllUsers() {
-    const response = await api.get("/user/signup")
+    const response = await api.get("/api/user/signup")
     return response.data
   }
 
   // Add a new user
   async addUser(userData: any) {
-    const response = await api.post("/user/signup", userData)
+    const response = await api.post("/api/user/signup", userData)
     return response.data
   }
 
   // Delete user by ID
   async deleteUser(id: string) {
-    const response = await api.delete(`/user/delete/${id}`)
+    const response = await api.delete(`/api/user/delete/${id}`)
     return response.data
   }
 
   // Update user by ID (Optional)
   async updateUser(id: string, userData: any) {
-    const response = await api.put(`/user/update/${id}`, userData)
+    const response = await api.put(`/api/user/update/${id}`, userData)
     return response.data
   }
 

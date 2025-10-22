@@ -3,6 +3,7 @@ import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { attRepo } from "@/repositories/attRepo";
 import Loader from "@/components/Loader";
+import dayjs from "dayjs"
 
 interface AttendanceData {
   status: string;
@@ -62,7 +63,7 @@ const Attendance: React.FC<Props> = ({ userId }) => {
       title: "Date",
       dataIndex: "date",
       key: "date",
-      render: (text) => new Date(text).toLocaleDateString(),
+      render: (date: string) => dayjs(date).format("DD MMM YYYY"),
     },
     {
       title: "Check In",
