@@ -74,6 +74,7 @@ const Students: React.FC = () => {
       setStatusData(status || [])
     } catch {
       message.error("Failed to fetch users or attendance")
+      console.log(errors);
     } finally {
       setLoading(false)
     }
