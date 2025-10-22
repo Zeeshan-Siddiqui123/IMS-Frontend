@@ -23,8 +23,8 @@ export class UserRepo {
     return response.data
   }
 
-  async getCourses(){
-    const response = await api.get("/api/user/course")
+  async getEnums(){
+    const response = await api.get("/api/user/enums")
     return response.data
   }
  

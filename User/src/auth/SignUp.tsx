@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from "react"
-import { message, Select } from "antd"
-import { CiUnread, CiRead } from "react-icons/ci"
-import { userRepo } from "../repositories/userRepo"
-import { Button } from "../components/ui/button"
-import { Link } from "react-router-dom"
+import React, { useEffect, useState } from "react";
+import { message, Select, Radio } from "antd";
+import { CiUnread, CiRead } from "react-icons/ci";
+import { userRepo } from "../repositories/userRepo";
+import { Button } from "../components/ui/button";
+import { Link, useNavigate } from "react-router-dom";
 
-const { Option } = Select
+const { Option } = Select;
 
 const SignUp: React.FC = () => {
-  const [showPassword, setShowPassword] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [courses, setCourses] = useState<string[]>([])
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [courses, setCourses] = useState<string[]>([]);
+  const [genders, setGenders] = useState<string[]>([]);
+  const [shifts, setShifts] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     bq_id: "",
@@ -19,33 +21,41 @@ const SignUp: React.FC = () => {
     phone: "",
     CNIC: "",
     course: "",
-  })
+    gender: "",
+    shift: "",
+  });
+
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchEnums = async () => {
       try {
-        const res = await userRepo.getCourses()
-        setCourses(res)
+        const res = await userRepo.getEnums();
+        // ✅ Backend expected: { courses, genders, shifts }
+        setCourses(res.courses || []);
+        setGenders(res.genders || []);
+        setShifts(res.shifts || []);
       } catch (err) {
-        message.error("Failed to load courses")
+        message.error("Failed to load options");
       }
-    }
-    fetchCourses()
-  }, [])
+    };
+    fetchEnums();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-  const handleCourseChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, course: value }))
-  }
+  const handleSelectChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = async () => {
     try {
-      await userRepo.addUser(formData)
-      message.success("User registered successfully")
+      await userRepo.addUser(formData);
+      message.success("User registered successfully");
+      navigate("/login");
       setFormData({
         name: "",
         bq_id: "",
@@ -54,22 +64,27 @@ const SignUp: React.FC = () => {
         phone: "",
         CNIC: "",
         course: "",
-      })
-      setErrors({})
+        gender: "",
+        shift: "",
+      });
+      setErrors({});
     } catch (error: any) {
       if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors)
+        setErrors(error.response.data.errors);
       } else {
-        message.error(error.response?.data?.message || "Registration failed")
+        message.error(error.response?.data?.message || "Registration failed");
       }
     }
-  }
+  };
 
   return (
     <div className="max-w-xl mx-auto p-6 mt-10 rounded-lg border shadow bg-white dark:bg-neutral-900">
-      <h2 className="text-2xl font-bold mb-6 text-center">Create Account</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">
+        Create Account
+      </h2>
 
       <div className="space-y-4 mb-6">
+        {/* Input Fields */}
         {[
           { name: "name", label: "Full Name", type: "text", placeholder: "Enter your full name" },
           { name: "bq_id", label: "BQ ID", type: "text", placeholder: "Enter your BQ ID" },
@@ -77,14 +92,13 @@ const SignUp: React.FC = () => {
           { name: "phone", label: "Phone", type: "text", placeholder: "Enter your phone number" },
           { name: "CNIC", label: "CNIC", type: "text", placeholder: "Enter your CNIC" },
         ].map((input) => (
-          <div key={input.name} className="w-full">
-            <label htmlFor={input.name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <div key={input.name}>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {input.label}
             </label>
             <input
               type={input.type}
               name={input.name}
-              id={input.name}
               value={(formData as any)[input.name]}
               onChange={handleChange}
               placeholder={input.placeholder}
@@ -99,16 +113,15 @@ const SignUp: React.FC = () => {
           </div>
         ))}
 
-        {/* Password Field with Eye Icon */}
-        <div className="w-full">
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        {/* Password Field */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Password
           </label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               name="password"
-              id="password"
               value={formData.password}
               onChange={handleChange}
               placeholder="Enter your password"
@@ -129,15 +142,14 @@ const SignUp: React.FC = () => {
           )}
         </div>
 
-        {/* Ant Design Course Dropdown */}
-        <div className="w-full">
-          <label htmlFor="course" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        {/* Course Dropdown */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Course
           </label>
           <Select
-            id="course"
             value={formData.course || undefined}
-            onChange={handleCourseChange}
+            onChange={(value) => handleSelectChange("course", value)}
             placeholder="Select a course"
             className="w-full"
           >
@@ -147,8 +159,45 @@ const SignUp: React.FC = () => {
               </Option>
             ))}
           </Select>
-          {errors.course && (
-            <p className="text-red-500 text-xs mt-1">{errors.course}</p>
+        </div>
+
+        {/* Gender Radio Buttons */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Gender
+          </label>
+          <Radio.Group
+            onChange={(e) => handleSelectChange("gender", e.target.value)}
+            value={formData.gender}
+          >
+            {genders.map((g) => (
+              <Radio key={g} value={g} className="mr-4">
+                {g}
+              </Radio>
+            ))}
+          </Radio.Group>
+          {errors.gender && (
+            <p className="text-red-500 text-xs mt-1">{errors.gender}</p>
+          )}
+        </div>
+
+        {/* Shift Radio Buttons */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Shift
+          </label>
+          <Radio.Group
+            onChange={(e) => handleSelectChange("shift", e.target.value)}
+            value={formData.shift}
+          >
+            {shifts.map((s) => (
+              <Radio key={s} value={s} className="mr-4">
+                {s}
+              </Radio>
+            ))}
+          </Radio.Group>
+          {errors.shift && (
+            <p className="text-red-500 text-xs mt-1">{errors.shift}</p>
           )}
         </div>
       </div>
@@ -159,16 +208,15 @@ const SignUp: React.FC = () => {
       >
         Sign Up
       </Button>
-      <div>
-        <p className="text-center mt-3">
-          Already have an account?{" "}
-          <Link to="/login" className="text-blue-600">
-            <u>Login</u>
-          </Link>
-        </p>
-      </div>
-    </div>
-  )
-}
 
-export default SignUp
+      <p className="text-center mt-3 text-gray-700 dark:text-gray-300">
+        Already have an account?{" "}
+        <Link to="/login" className="text-blue-600">
+          <u>Login</u>
+        </Link>
+      </p>
+    </div>
+  );
+};
+
+export default SignUp;

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react"
-import { message, Modal } from "antd"
+import { message, Modal, Select, Radio } from "antd"
 import { Button } from "@/components/ui/button"
-import { MdDeleteSweep, MdEditSquare } from "react-icons/md"
-import { CiUnread, CiRead } from "react-icons/ci"
+import { MdDeleteSweep, MdEditSquare, MdPersonAdd } from "react-icons/md"
 import {
   Table,
   TableHeader,
@@ -14,6 +13,9 @@ import {
 import { userRepo } from "@/repositories/userRepo"
 import Loader from "@/components/Loader"
 import { attendanceRepo } from "@/repositories/attendanceRepo"
+import { CiUnread, CiRead } from "react-icons/ci"
+
+const { Option } = Select
 
 interface User {
   _id: string
@@ -24,17 +26,22 @@ interface User {
   phone: string
   CNIC: string
   course: string
-  status?: string // API se aayega
+  gender: string
+  shift: string
+  status?: string
 }
 
 const Students: React.FC = () => {
   const [users, setUsers] = useState<User[]>([])
-  const [statusData, setStatusData] = useState<any[]>([]) // status data
+  const [statusData, setStatusData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [courses, setCourses] = useState<string[]>([])
+  const [genders, setGenders] = useState<string[]>([])
+  const [shifts, setShifts] = useState<string[]>([])
   const [formData, setFormData] = useState({
     name: "",
     bq_id: "",
@@ -44,15 +51,19 @@ const Students: React.FC = () => {
     phone: "",
     CNIC: "",
     course: "",
+    gender: "",
+    shift: "",
   })
 
-  // ✅ Handle Input Change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  // ✅ Fetch Users + Status
+  const handleSelectChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
   const fetchUsers = async () => {
     try {
       const [usersData, status] = await Promise.all([
@@ -61,14 +72,24 @@ const Students: React.FC = () => {
       ])
       setUsers(usersData || [])
       setStatusData(status || [])
-    } catch (err) {
+    } catch {
       message.error("Failed to fetch users or attendance")
     } finally {
       setLoading(false)
     }
   }
 
-  // ✅ Reset form
+  const fetchEnums = async () => {
+    try {
+      const res = await userRepo.getEnums()
+      setCourses(res.courses || [])
+      setGenders(res.genders || [])
+      setShifts(res.shifts || [])
+    } catch {
+      message.error("Failed to load options")
+    }
+  }
+
   const resetForm = () => {
     setFormData({
       name: "",
@@ -79,12 +100,13 @@ const Students: React.FC = () => {
       phone: "",
       CNIC: "",
       course: "",
+      gender: "",
+      shift: "",
     })
     setErrors({})
     setEditingId(null)
   }
 
-  // ✅ Save (Add / Update)
   const handleSave = async () => {
     try {
       if (editingId) {
@@ -106,7 +128,6 @@ const Students: React.FC = () => {
     }
   }
 
-  // ✅ Delete User
   const handleDelete = (id: string) => {
     Modal.confirm({
       title: "Are you sure you want to delete this user?",
@@ -125,7 +146,6 @@ const Students: React.FC = () => {
     })
   }
 
-  // ✅ Open Edit Modal
   const openEditModal = (user: User) => {
     setFormData({
       name: user.name,
@@ -136,6 +156,8 @@ const Students: React.FC = () => {
       phone: user.phone,
       CNIC: user.CNIC,
       course: user.course,
+      gender: user.gender,
+      shift: user.shift,
     })
     setEditingId(user._id)
     setIsModalOpen(true)
@@ -143,14 +165,23 @@ const Students: React.FC = () => {
 
   useEffect(() => {
     fetchUsers()
-
-    // ✅ optional: auto-refresh attendance every 1 min
-    const interval = setInterval(fetchUsers, 60000)
-    return () => clearInterval(interval)
+    fetchEnums()
   }, [])
 
   return (
     <div className="min-h-screen w-full p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+          Manage Students
+        </h2>
+        <Button
+          className="flex items-center gap-2 bg-black hover:bg-gray-700 text-white"
+          onClick={() => setIsModalOpen(true)}
+        >
+          <MdPersonAdd /> Add User
+        </Button>
+      </div>
+
       <div className="rounded-lg border shadow-sm bg-white dark:bg-neutral-900">
         {loading ? (
           <Loader />
@@ -158,13 +189,15 @@ const Students: React.FC = () => {
           <Table>
             <TableHeader className="bg-neutral-100 dark:bg-neutral-800">
               <TableRow>
-                <TableHead className="w-12 text-center">#</TableHead>
+                <TableHead>#</TableHead>
                 <TableHead>BQ Id</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>CNIC</TableHead>
                 <TableHead>Course</TableHead>
+                <TableHead>Gender</TableHead>
+                <TableHead>Shift</TableHead>
                 <TableHead>Today Attendance</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -175,13 +208,15 @@ const Students: React.FC = () => {
                   const status = statusData.find((s) => s._id === user._id)?.status
                   return (
                     <TableRow key={user._id}>
-                      <TableCell className="text-center">{index + 1}</TableCell>
+                      <TableCell>{index + 1}</TableCell>
                       <TableCell>{user.bq_id}</TableCell>
                       <TableCell>{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{user.phone}</TableCell>
                       <TableCell>{user.CNIC}</TableCell>
                       <TableCell>{user.course}</TableCell>
+                      <TableCell>{user.gender}</TableCell>
+                      <TableCell>{user.shift}</TableCell>
                       <TableCell>
                         <span
                           className={`px-2 py-1 rounded-full text-center text-sm font-semibold ${
@@ -218,7 +253,7 @@ const Students: React.FC = () => {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={11} className="text-center py-8 text-gray-500">
                     No users found
                   </TableCell>
                 </TableRow>
@@ -228,11 +263,11 @@ const Students: React.FC = () => {
         )}
       </div>
 
-      {/* ✅ Modal Form */}
+      {/* ✅ Add/Edit Modal */}
       <Modal
         title={
-          <span className="text-xl font-semibold mb-3 text-center">
-            {editingId ? "Edit User" : "Create Account"}
+          <span className="text-xl font-semibold">
+            {editingId ? "Edit User" : "Add New User"}
           </span>
         }
         open={isModalOpen}
@@ -243,59 +278,105 @@ const Students: React.FC = () => {
         footer={null}
         centered
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 mt-7">
+        <div className="space-y-4 mb-6 mt-6">
+          {/* Inputs */}
           {[
             { name: "name", label: "Full Name", type: "text" },
             { name: "bq_id", label: "BQ ID", type: "text" },
             { name: "email", label: "Email", type: "email" },
             { name: "phone", label: "Phone", type: "text" },
             { name: "CNIC", label: "CNIC", type: "text" },
-            { name: "course", label: "Course", type: "text" },
-            !editingId && {
-              name: "password",
-              label: "Password",
-              type: showPassword ? "text" : "password",
-            },
-          ]
-            .filter(Boolean)
-            .map((input: any) => (
-              <div key={input.name} className="relative z-0 w-full group">
-                <input
-                  type={input.type}
-                  name={input.name}
-                  id={input.name}
-                  value={(formData as any)[input.name]}
-                  onChange={handleChange}
-                  className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0 ${
-                    errors[input.name] ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder=" "
-                  autoComplete="off"
-                />
-                <label
-                  htmlFor={input.name}
-                  className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${
-                    (formData as any)[input.name]
-                      ? "-translate-y-6 scale-75 text-blue-600"
-                      : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                  }`}
-                >
-                  {input.label}
-                </label>
+          ].map((input) => (
+            <div key={input.name}>
+              <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
+                {input.label}
+              </label>
+              <input
+                type={input.type}
+                name={input.name}
+                value={(formData as any)[input.name]}
+                onChange={handleChange}
+                className="w-full border rounded-md px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+          ))}
 
-                {input.name === "password" && (
-                  <span
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2 top-3 text-gray-500 cursor-pointer text-sm select-none"
-                  >
-                    {showPassword ? <CiUnread color="gray" /> : <CiRead color="black" />}
-                  </span>
-                )}
-                {errors[input.name] && (
-                  <p className="text-red-500 text-xs mt-1">{errors[input.name]}</p>
-                )}
+          {/* Password */}
+          {!editingId && (
+            <div>
+              <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full border rounded-md px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
+                />
+                <span
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 text-gray-500 cursor-pointer"
+                >
+                  {showPassword ? <CiUnread /> : <CiRead />}
+                </span>
               </div>
-            ))}
+            </div>
+          )}
+
+          {/* Course Dropdown */}
+          <div>
+            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
+              Course
+            </label>
+            <Select
+              value={formData.course || undefined}
+              onChange={(value) => handleSelectChange("course", value)}
+              placeholder="Select a course"
+              className="w-full"
+            >
+              {courses.map((c) => (
+                <Option key={c} value={c}>
+                  {c}
+                </Option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Gender */}
+          <div>
+            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
+              Gender
+            </label>
+            <Radio.Group
+              onChange={(e) => handleSelectChange("gender", e.target.value)}
+              value={formData.gender}
+            >
+              {genders.map((g) => (
+                <Radio key={g} value={g} className="mr-4">
+                  {g}
+                </Radio>
+              ))}
+            </Radio.Group>
+          </div>
+
+          {/* Shift */}
+          <div>
+            <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
+              Shift
+            </label>
+            <Radio.Group
+              onChange={(e) => handleSelectChange("shift", e.target.value)}
+              value={formData.shift}
+            >
+              {shifts.map((s) => (
+                <Radio key={s} value={s} className="mr-4">
+                  {s}
+                </Radio>
+              ))}
+            </Radio.Group>
+          </div>
         </div>
 
         <Button
