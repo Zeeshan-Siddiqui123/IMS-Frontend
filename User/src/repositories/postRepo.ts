@@ -6,13 +6,30 @@ export class PostRepo {
     return response.data
   }
 
-  async getPostById(id: string) {
-    const response = await api.get(`/api/admin/post/${id}`)
+   async getAllUsersPosts() {
+    const response = await api.get("/api/user/getuserpost")
+    return response.data
+  }
+
+    async getPostById(id: string) {
+    const response = await api.get(`/api/admin/getpost/${id}`)
+    return response.data
+  }
+
+  async getUserPostById(id: string) {
+    const response = await api.get(`/api/user/getuserpost/${id}`)
     return response.data
   }
 
   async createPost(postData: any) {
     const response = await api.post("/api/admin/post", postData, {
+    //   headers: { "Content-Type": "multipart/form-data" },
+    })
+    return response.data
+  }
+
+    async createUserPost(postData: any) {
+    const response = await api.post("/api/user/createpost", postData, {
     //   headers: { "Content-Type": "multipart/form-data" },
     })
     return response.data
@@ -30,6 +47,10 @@ export class PostRepo {
     const response = await api.delete(`/api/admin/post/${id}`)
     return response.data
   }
+
+  
 }
+
+
 
 export const postRepo = new PostRepo()

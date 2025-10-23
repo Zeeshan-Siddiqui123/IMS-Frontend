@@ -3,7 +3,6 @@ import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { attRepo } from "@/repositories/attRepo";
 import Loader from "@/components/Loader";
-import dayjs from "dayjs"
 
 interface AttendanceData {
   status: string;
@@ -60,11 +59,18 @@ const Attendance: React.FC<Props> = ({ userId }) => {
   // ✅ Columns for Ant Design Table
   const columns: ColumnsType<HistoryRecord> = [
     {
-      title: "Date",
-      dataIndex: "date",
-      key: "date",
-      render: (date: string) => dayjs(date).format("DD MMM YYYY"),
-    },
+    title: "Date",
+    dataIndex: "createdAt", // ✅ use backend timestamp field
+    key: "createdAt",
+    render: (createdAt: string) =>
+      createdAt
+        ? new Date(createdAt).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "—",
+  },
     {
       title: "Check In",
       dataIndex: "checkInTime",
@@ -137,4 +143,4 @@ const Attendance: React.FC<Props> = ({ userId }) => {
   );
 };
 
-export default Attendance;
+export default Attendance;

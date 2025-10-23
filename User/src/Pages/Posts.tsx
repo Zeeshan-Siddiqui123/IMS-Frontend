@@ -11,10 +11,7 @@ interface Post {
   title: string;
   description: string;
   link: string;
-  image: string;
 }
-
-
 
 const Posts = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -22,16 +19,14 @@ const Posts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     link: "",
-    image: null as File | null,
-    existingImage: "",
   });
 
+  // 🧠 Fetch posts
   const fetchPosts = async () => {
     try {
       const data = await postRepo.getAllPosts();
@@ -44,14 +39,7 @@ const Posts = () => {
   };
 
   const resetForm = () => {
-    setFormData({
-      title: "",
-      description: "",
-      link: "",
-      image: null,
-      existingImage: "",
-    });
-    setPreviewImage(null);
+    setFormData({ title: "", description: "", link: "" });
     setErrors({});
     setEditingId(null);
   };
@@ -63,35 +51,22 @@ const Posts = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setFormData((prev) => ({ ...prev, image: file }));
-    if (file) setPreviewImage(URL.createObjectURL(file));
-  };
-
   const handleSave = async () => {
     try {
-      const form = new FormData();
-      form.append("title", formData.title);
-      form.append("description", formData.description);
-      form.append("link", formData.link);
-  
-      if (formData.image) {
-        // Agar nayi image select hui hai
-        form.append("image", formData.image);
-      } else if (formData.existingImage) {
-        // Agar edit mode hai aur user ne new image select nahi ki
-        form.append("existingImage", formData.existingImage);
-      }
-  
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        link: formData.link,
+      };
+
       if (editingId) {
-        await postRepo.updatePost(editingId, form); // ab form-data jayega
+        await postRepo.updatePost(editingId, payload);
         message.success("Post updated successfully");
       } else {
-        await postRepo.createPost(form);
+        await postRepo.createPost(payload);
         message.success("Post created successfully");
       }
-  
+
       setIsModalOpen(false);
       resetForm();
       fetchPosts();
@@ -103,7 +78,7 @@ const Posts = () => {
       }
     }
   };
-  
+
   const handleDelete = (id: string) => {
     Modal.confirm({
       title: "Are you sure you want to delete this post?",
@@ -127,10 +102,7 @@ const Posts = () => {
       title: post.title,
       description: post.description,
       link: post.link,
-      image: null,
-      existingImage: post.image,
     });
-    setPreviewImage(post.image || null);
     setEditingId(post._id);
     setIsModalOpen(true);
   };
@@ -155,46 +127,39 @@ const Posts = () => {
             posts.map((post) => (
               <div
                 key={post._id}
-                className="bg-white dark:bg-neutral-900 shadow rounded-lg overflow-hidden"
+                className="bg-white dark:bg-neutral-900 shadow rounded-lg overflow-hidden p-4"
               >
-                <img
-                  src={post.image}
-                  alt={post.title}
-                  className="h-44 w-full object-cover"
-                />
-                <div className="p-4">
-                  <h2 className="text-lg font-semibold">{post.title}</h2>
-                  <p className="text-gray-600 text-sm mt-2 line-clamp-3">
-                    {post.description}
-                  </p>
-                  {post.link && (
-                    <a
-                      href={post.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 text-sm mt-2 inline-block"
-                    >
-                      Visit Link
-                    </a>
-                  )}
-                  <div className="flex justify-start gap-2 mt-4">
-                    <Button
-                      variant="default"
-                      size="icon"
-                      onClick={() => openEditModal(post)}
-                      className="cursor-pointer rounded-full"
-                    >
-                      <MdEditSquare className="text-white" />
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => handleDelete(post._id)}
-                      className="cursor-pointer rounded-full"
-                    >
-                      <MdDeleteSweep className="text-white" />
-                    </Button>
-                  </div>
+                <h2 className="text-lg font-semibold">{post.title}</h2>
+                <p className="text-gray-600 text-sm mt-2 line-clamp-3">
+                  {post.description}
+                </p>
+                {post.link && (
+                  <a
+                    href={post.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 text-sm mt-2 inline-block"
+                  >
+                    Visit Link
+                  </a>
+                )}
+                <div className="flex justify-start gap-2 mt-4">
+                  <Button
+                    variant="default"
+                    size="icon"
+                    onClick={() => openEditModal(post)}
+                    className="cursor-pointer rounded-full"
+                  >
+                    <MdEditSquare className="text-white" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => handleDelete(post._id)}
+                    className="cursor-pointer rounded-full"
+                  >
+                    <MdDeleteSweep className="text-white" />
+                  </Button>
                 </div>
               </div>
             ))
@@ -275,17 +240,6 @@ const Posts = () => {
               <p className="text-red-500 text-xs mt-1">
                 {errors.description}
               </p>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <input type="file" accept="image/*" onChange={handleImageChange} />
-            {previewImage && (
-              <img
-                src={previewImage}
-                alt="Preview"
-                className="h-40 w-full object-cover rounded border"
-              />
             )}
           </div>
         </div>

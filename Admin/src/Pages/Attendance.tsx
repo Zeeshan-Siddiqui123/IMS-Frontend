@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import { attendanceRepo } from "@/repositories/attendanceRepo"
 import { Button } from "@/components/ui/button"
 import { Input, Select, Table, message } from "antd"
-import dayjs from "dayjs"
 
 const { Option } = Select
 
@@ -38,6 +37,7 @@ const Attendance = () => {
       filterByDate(dateFilter, allHistory)
       return
     }
+
     const lowerName = searchName.toLowerCase()
     const filtered = filteredHistory.filter((record) =>
       record.user?.name?.toLowerCase().includes(lowerName)
@@ -48,14 +48,15 @@ const Attendance = () => {
   // 🧠 Group Records by (User + Date)
   const groupByUserAndDate = (data: any[]) => {
     const map = new Map()
+
     data.forEach((item) => {
       const userId = item.user?._id || item.user?.id
-      const dateKey = dayjs(item.date).format("YYYY-MM-DD")
+      const dateKey = new Date(item.createdAt).toISOString().split("T")[0]
       const key = `${userId}_${dateKey}`
 
       if (!map.has(key)) {
         map.set(key, {
-          key, // AntD Table needs a key
+          key,
           user: item.user,
           date: dateKey,
           status: item.status,
@@ -64,30 +65,39 @@ const Attendance = () => {
         })
       }
     })
+
     return Array.from(map.values())
   }
 
-  // 📅 Date Filters
+  // 📅 Date Filters (no dayjs)
   const filterByDate = (type: string, baseData = allHistory) => {
-    const today = dayjs()
+    const today = new Date()
     let filtered: any[] = []
 
     switch (type) {
       case "today":
-        filtered = baseData.filter((rec) =>
-          dayjs(rec.date).isSame(today, "day")
-        )
-        break
-      
-        break
-      case "previousMonth":
-        const startPrev = today.subtract(1, "month").startOf("month")
-        const endPrev = today.subtract(1, "month").endOf("month")
         filtered = baseData.filter((rec) => {
-          const d = dayjs(rec.date)
-          return d.isAfter(startPrev.subtract(1, "day")) && d.isBefore(endPrev.add(1, "day"))
+          const recDate = new Date(rec.createdAt)
+          return (
+            recDate.getDate() === today.getDate() &&
+            recDate.getMonth() === today.getMonth() &&
+            recDate.getFullYear() === today.getFullYear()
+          )
         })
         break
+
+      case "previousMonth":
+        const prevMonth = today.getMonth() === 0 ? 11 : today.getMonth() - 1
+        const prevYear = prevMonth === 11 ? today.getFullYear() - 1 : today.getFullYear()
+        filtered = baseData.filter((rec) => {
+          const recDate = new Date(rec.createdAt)
+          return (
+            recDate.getMonth() === prevMonth &&
+            recDate.getFullYear() === prevYear
+          )
+        })
+        break
+
       case "overall":
       default:
         filtered = baseData
@@ -103,8 +113,8 @@ const Attendance = () => {
     filterByDate(value)
   }
 
-  // 📝 Columns for AntD Table
-    const columns = [
+  // 📝 Table Columns
+  const columns = [
     {
       title: "Name",
       dataIndex: ["user", "name"],
@@ -124,13 +134,19 @@ const Attendance = () => {
             <Option value="today">Today</Option>
             <Option value="previousMonth">Previous Month</Option>
             <Option value="overall">Overall</Option>
-            
           </Select>
         </div>
       ),
       dataIndex: "date",
       key: "date",
-      render: (date: string) => dayjs(date).format("DD MMM YYYY"),
+      render: (date: string) =>
+        date
+          ? new Date(date).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "—",
     },
     {
       title: "Status",

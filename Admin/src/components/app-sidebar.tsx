@@ -71,6 +71,11 @@ const data = {
       url: "/admin/attendance",
       icon: Check,
     },
+    {
+      title: "Report",
+      url: "/admin/report",
+      icon: Check,
+    },
   ],
   navClouds: [
     {
