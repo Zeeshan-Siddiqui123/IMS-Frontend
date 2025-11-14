@@ -27,7 +27,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { AirplayIcon, Check } from "lucide-react"
+import {  Check } from "lucide-react"
 
 const data = {
   user: {
@@ -70,11 +70,6 @@ const data = {
       title: "Attendance",
       url: "/admin/attendance",
       icon: Check,
-    },
-    {
-      title: "AI Report Generation",
-      url: "/admin/report",
-      icon: AirplayIcon,
     },
   ],
   navClouds: [
