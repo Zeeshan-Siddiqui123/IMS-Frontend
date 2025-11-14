@@ -9,7 +9,7 @@ import Teams from "./Pages/Teams";
 import Projects from "./Pages/Projects";
 import Managers from "./Pages/Managers";
 import Attendance from "./Pages/Attendance";
-import AIReportGenerator from "./Pages/AIReportGenerator";
+
 
 const App = () => {
   return (
@@ -33,7 +33,6 @@ const App = () => {
           <Route path="/admin/projects" element={<Projects />}/>
           <Route path="/admin/pm" element={<Managers />}/>
           <Route path="/admin/attendance" element={<Attendance />}/>
-          <Route path="/admin/report" element={<AIReportGenerator />}/>
           </Routes>
         </SidebarInset>
         </SidebarProvider>
