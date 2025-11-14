@@ -3,7 +3,6 @@ import { Modal, message } from "antd";
 import { Button } from "@/components/ui/button";
 import { postRepo } from "../repositories/postRepo";
 import UrlBreadcrumb from "@/components/UrlBreadcrumb";
-import { MdDeleteSweep, MdEditSquare } from "react-icons/md";
 import Loader from "@/components/Loader";
 
 interface Post {
@@ -14,11 +13,12 @@ interface Post {
 }
 
 const Posts = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [adminPosts, setAdminPosts] = useState<Post[]>([]);
+  const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState<"admin" | "user">("admin");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -26,11 +26,15 @@ const Posts = () => {
     link: "",
   });
 
-  // 🧠 Fetch posts
+  // 🧠 Fetch both admin & user posts
   const fetchPosts = async () => {
     try {
-      const data = await postRepo.getAllPosts();
-      setPosts(data || []);
+      const [adminData, userData] = await Promise.all([
+        postRepo.getAllPosts(),
+        postRepo.getAllUsersPosts(),
+      ]);
+      setAdminPosts(adminData || []);
+      setUserPosts(userData || []);
     } catch {
       message.error("Failed to fetch posts");
     } finally {
@@ -41,7 +45,6 @@ const Posts = () => {
   const resetForm = () => {
     setFormData({ title: "", description: "", link: "" });
     setErrors({});
-    setEditingId(null);
   };
 
   const handleChange = (
@@ -51,21 +54,16 @@ const Posts = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = async () => {
+  const handleCreate = async () => {
     try {
-      const payload = {
+      const form = {
         title: formData.title,
         description: formData.description,
         link: formData.link,
       };
 
-      if (editingId) {
-        await postRepo.updatePost(editingId, payload);
-        message.success("Post updated successfully");
-      } else {
-        await postRepo.createPost(payload);
-        message.success("Post created successfully");
-      }
+      await postRepo.createUserPost(form);
+      message.success("Post created successfully");
 
       setIsModalOpen(false);
       resetForm();
@@ -74,106 +72,112 @@ const Posts = () => {
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else {
-        message.error(error.response?.data?.message || "Action failed");
+        message.error(error.response?.data?.message || "Failed to create post");
       }
     }
-  };
-
-  const handleDelete = (id: string) => {
-    Modal.confirm({
-      title: "Are you sure you want to delete this post?",
-      okText: "Yes, Delete",
-      okType: "danger",
-      cancelText: "Cancel",
-      onOk: async () => {
-        try {
-          await postRepo.deletePost(id);
-          setPosts((prev) => prev.filter((p) => p._id !== id));
-          message.success("Post deleted successfully");
-        } catch {
-          message.error("Failed to delete post");
-        }
-      },
-    });
-  };
-
-  const openEditModal = (post: Post) => {
-    setFormData({
-      title: post.title,
-      description: post.description,
-      link: post.link,
-    });
-    setEditingId(post._id);
-    setIsModalOpen(true);
   };
 
   useEffect(() => {
     fetchPosts();
   }, []);
 
+  const renderPostCard = (post: Post) => (
+    <div
+      key={post._id}
+      className="bg-white dark:bg-neutral-900 shadow rounded-lg p-4"
+    >
+      <h2 className="text-lg font-semibold">{post.title}</h2>
+      <p className="text-gray-600 text-sm mt-2 line-clamp-3">
+        {post.description}
+      </p>
+      {post.link && (
+        <a
+          href={post.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 text-sm mt-2 inline-block"
+        >
+          Visit Link
+        </a>
+      )}
+    </div>
+  );
+
   return (
     <div className="p-6">
       <UrlBreadcrumb />
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Posts</h1>
-        <Button onClick={() => setIsModalOpen(true)}>Add Post</Button>
+      <div className="text-2xl font-bold mb-6">User Dashboard</div>
+
+      {/* 👇 Tabs Buttons */}
+      <div className="flex gap-3 mb-6">
+        <Button
+          variant={activeTab === "admin" ? "default" : "outline"}
+          onClick={() => setActiveTab("admin")}
+          className={activeTab === "admin" ? "bg-blue-600 text-white" : ""}
+        >
+          📢 Admin Announcements
+        </Button>
+        <Button
+          variant={activeTab === "user" ? "default" : "outline"}
+          onClick={() => setActiveTab("user")}
+          className={activeTab === "user" ? "bg-green-600 text-white" : ""}
+        >
+          👥 User Posts
+        </Button>
       </div>
 
       {loading ? (
         <Loader />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {posts.length > 0 ? (
-            posts.map((post) => (
-              <div
-                key={post._id}
-                className="bg-white dark:bg-neutral-900 shadow rounded-lg overflow-hidden p-4"
-              >
-                <h2 className="text-lg font-semibold">{post.title}</h2>
-                <p className="text-gray-600 text-sm mt-2 line-clamp-3">
-                  {post.description}
-                </p>
-                {post.link && (
-                  <a
-                    href={post.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 text-sm mt-2 inline-block"
-                  >
-                    Visit Link
-                  </a>
-                )}
-                <div className="flex justify-start gap-2 mt-4">
-                  <Button
-                    variant="default"
-                    size="icon"
-                    onClick={() => openEditModal(post)}
-                    className="cursor-pointer rounded-full"
-                  >
-                    <MdEditSquare className="text-white" />
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleDelete(post._id)}
-                    className="cursor-pointer rounded-full"
-                  >
-                    <MdDeleteSweep className="text-white" />
-                  </Button>
+        <>
+          {/* 👇 Admin Posts Section */}
+          {activeTab === "admin" && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-blue-600">
+                📢 Announcements (Admin Posts)
+              </h2>
+              {adminPosts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {adminPosts.map(renderPostCard)}
                 </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500">No posts found</p>
+              ) : (
+                <p className="text-gray-500">No admin posts found</p>
+              )}
+            </div>
           )}
-        </div>
+
+          {/* 👇 User Posts Section */}
+          {activeTab === "user" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-green-600">
+                  👥 User Posts
+                </h2>
+                <Button
+                  onClick={() => setIsModalOpen(true)}
+                  className="bg-black text-white hover:bg-gray-800"
+                >
+                  Create Post
+                </Button>
+              </div>
+
+              {userPosts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {userPosts.map(renderPostCard)}
+                </div>
+              ) : (
+                <p className="text-gray-500">No user posts found</p>
+              )}
+            </div>
+          )}
+        </>
       )}
 
-      {/* Modal */}
+      {/* 🧩 Modal: Create Post */}
       <Modal
         title={
           <span className="text-xl font-semibold mb-3 text-center">
-            {editingId ? "Edit Post" : "Create Post"}
+            Create Post
           </span>
         }
         open={isModalOpen}
@@ -194,17 +198,19 @@ const Posts = () => {
                 id={input.name}
                 value={(formData as any)[input.name]}
                 onChange={handleChange}
-                className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0 ${errors[input.name] ? "border-red-500" : "border-gray-300"
-                  }`}
+                className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-black focus:outline-none focus:ring-0 ${
+                  errors[input.name] ? "border-red-500" : "border-gray-300"
+                }`}
                 placeholder=" "
                 autoComplete="off"
               />
               <label
                 htmlFor={input.name}
-                className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${(formData as any)[input.name]
-                    ? "-translate-y-6 scale-75 text-blue-600"
-                    : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                  }`}
+                className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${
+                  (formData as any)[input.name]
+                    ? "-translate-y-6 scale-75 text-black"
+                    : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-black"
+                }`}
               >
                 {input.label}
               </label>
@@ -223,16 +229,18 @@ const Posts = () => {
               rows={4}
               value={formData.description}
               onChange={handleChange}
-              className={`peer block w-full appearance-none border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0 ${errors.description ? "border-red-500" : "border-gray-300"
-                }`}
+              className={`peer block w-full border-0 border-b-2 bg-transparent py-2.5 px-0 text-gray-900 focus:border-black focus:outline-none focus:ring-0 ${
+                errors.description ? "border-red-500" : "border-gray-300"
+              }`}
               placeholder=" "
             />
             <label
               htmlFor="description"
-              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${formData.description
-                  ? "-translate-y-6 scale-75 text-blue-600"
-                  : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-600"
-                }`}
+              className={`absolute top-3 origin-[0] transform text-gray-500 duration-200 ${
+                formData.description
+                  ? "-translate-y-6 scale-75 text-black"
+                  : "peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-black"
+              }`}
             >
               Description
             </label>
@@ -245,10 +253,10 @@ const Posts = () => {
         </div>
 
         <Button
-          className="w-full h-11 text-lg font-medium shadow-sm hover:shadow-md transition"
-          onClick={handleSave}
+          className="w-full h-11 text-lg font-medium bg-black text-white hover:bg-gray-800 shadow-sm hover:shadow-md transition"
+          onClick={handleCreate}
         >
-          {editingId ? "Update Post" : "Create Post"}
+          Create Post
         </Button>
       </Modal>
     </div>
