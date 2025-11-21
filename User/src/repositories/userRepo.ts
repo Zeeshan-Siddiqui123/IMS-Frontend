@@ -18,6 +18,11 @@ export class UserRepo {
     return response.data
   }
 
+  async logoutUser(){
+    const response = await api.post("/api/user/logout")
+    return response.data
+  }
+
   async me() {
     const response = await api.get("/api/user/me")
     return response.data
