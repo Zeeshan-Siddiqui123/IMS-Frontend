@@ -83,7 +83,11 @@ const Posts = () => {
         title: formData.title,
         description: formData.description,
         link: formData.link,
+        
       };
+
+      // console.log(form);
+      
 
       const response = await postRepo.createUserPost(form);
       message.success("Post created successfully");
