@@ -6,12 +6,12 @@ export class PostRepo {
     return response.data
   }
 
-   async getAllUsersPosts() {
+  async getAllUsersPosts() {
     const response = await api.get("/api/user/getuserpost")
     return response.data
   }
 
-    async getPostById(id: string) {
+  async getPostById(id: string) {
     const response = await api.get(`/api/admin/getpost/${id}`)
     return response.data
   }
@@ -23,17 +23,18 @@ export class PostRepo {
 
   async createPost(postData: any) {
     const response = await api.post("/api/admin/post", postData, {
-    //   headers: { "Content-Type": "multipart/form-data" },
+      //   headers: { "Content-Type": "multipart/form-data" },
     })
     return response.data
   }
 
-    async createUserPost(postData: any) {
+  async createUserPost(postData: any) {
     const response = await api.post("/api/user/createpost", postData, {
-    //   headers: { "Content-Type": "multipart/form-data" },
-    })
-    return response.data
+      withCredentials: true, // ✅ important!
+    });
+    return response.data;
   }
+
 
   async updatePost(id: string, postData: any) {
     const response = await api.put(`/api/admin/post/${id}`, postData, {
@@ -41,14 +42,14 @@ export class PostRepo {
     });
     return response.data;
   }
-  
+
 
   async deletePost(id: string) {
     const response = await api.delete(`/api/admin/post/${id}`)
     return response.data
   }
 
-  
+
 }
 
 
