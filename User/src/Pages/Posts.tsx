@@ -16,7 +16,6 @@ interface Post {
     name: string;
   };
 }
-
 const Posts = () => {
   const [adminPosts, setAdminPosts] = useState<Post[]>([]);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
@@ -32,13 +31,20 @@ const Posts = () => {
     link: "",
   });
 
+
+
+  
   // Fetch Posts
   const fetchPosts = async () => {
     try {
       const [adminData, userData] = await Promise.all([
         postRepo.getAllPosts(),
         postRepo.getAllUsersPosts(),
+
+        
       ]);
+      console.log(userData[0].user._id);
+      
       setAdminPosts(adminData || []);
       setUserPosts(userData || []);
     } catch {
