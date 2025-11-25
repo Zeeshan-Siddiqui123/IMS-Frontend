@@ -15,7 +15,7 @@ const Dashboard = () => {
       }
 
       try {
-        const res = await userRepo.me()
+        const res = await userRepo.profile()
         setUser(res.data)
       } catch (err: any) {
         console.error("Failed to fetch user:", err)

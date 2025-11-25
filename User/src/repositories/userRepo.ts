@@ -23,8 +23,8 @@ export class UserRepo {
     return response.data
   }
 
-  async me() {
-    const response = await api.get("/api/user/me")
+  async profile() {
+    const response = await api.get("/api/user/profile")
     return response.data
   }
 

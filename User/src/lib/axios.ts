@@ -7,6 +7,7 @@ const api = axios.create({
       ? "http://localhost:3000"          
       : "https://ims-server-sage.vercel.app", 
   withCredentials: true,
+
 })
 
 export default api

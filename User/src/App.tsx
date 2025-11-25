@@ -10,6 +10,7 @@ import Attendance from "./Pages/Attendance"
 // import Attendance from "./components/Attendance"
 import { useAuthStore } from "./hooks/store/authStore"
 import Posts from "./Pages/Posts"
+import Profile from "./Pages/Profile"
 
 
 const App = () => {
@@ -32,7 +33,7 @@ const App = () => {
           <Route path="/attendance" element={<Attendance userId={user?.id} />} />
           <Route path="/posts" element={<Posts />} />
           {/* <Route path="reports" element={<Reports />} /> */}
-          {/* <Route path="profile" element={<Profile />} /> */}
+          <Route path="/profile" element={<Profile />} />
         </Route>
 
         {/* Catch all - redirect to home */}

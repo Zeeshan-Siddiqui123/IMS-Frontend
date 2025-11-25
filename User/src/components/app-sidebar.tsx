@@ -11,8 +11,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Check, LogOut } from "lucide-react"
+import { Check, LogOut, User } from "lucide-react"
 import Logout from "@/auth/Logout"
+import { userRepo } from "../repositories/userRepo"
+import { useAuthStore } from "@/hooks/store/authStore"
+
 
 const data = {
   navMain: [
@@ -24,9 +27,28 @@ const data = {
 
 export function AppSidebar(props) {
 
+  const { user, setUser, isLoading, setLoading } = useAuthStore()
+
   const triggerLogout = () => {
     document.getElementById("logoutBtn")?.click()
   }
+
+  // Fetch User Profile
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true)
+        const res = await userRepo.profile()
+        setUser(res.user)
+      } catch (err) {
+        console.log("Profile error:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProfile()
+  }, [setUser, setLoading])
+
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -44,20 +66,46 @@ export function AppSidebar(props) {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="flex flex-col">
+
         <NavMain items={data.navMain} />
 
-        {/* Custom Logout Button */}
-        <SidebarMenu className="mt-auto">
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={triggerLogout}>
-              <LogOut className="!size-5" />
-              <span className="text-base font-semibold">Logout</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {/* ⭐ USER PROFILE SECTION — FIXED BOTTOM */}
+        <div className="mt-auto border-t px-3 py-4">
 
-        {/* Hidden Logout Component */}
+          <div className="flex items-center gap-3">
+            <img
+              src={`https://ui-avatars.com/api/?name=${user?.name || "User"}`}
+              alt="User"
+              className="w-10 h-10 rounded-full border"
+            />
+
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">
+                {isLoading ? "Loading..." : user?.name}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {isLoading ? "Loading..." : user?.email}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <Link to="/profile" className="flex items-center gap-2 py-1 px-2 rounded-md hover:bg-accent">
+              <User className="w-4 h-4" />
+              <span className="text-sm font-medium">Profile</span>
+            </Link>
+
+            <button
+              onClick={triggerLogout}
+              className="flex items-center gap-2 py-1 px-2 rounded-md hover:bg-accent text-red-500"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm font-medium">Logout</span>
+            </button>
+          </div>
+        </div>
+
         <Logout />
 
       </SidebarContent>

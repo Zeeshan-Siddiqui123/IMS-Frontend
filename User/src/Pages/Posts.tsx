@@ -43,7 +43,7 @@ const Posts = () => {
 
         
       ]);
-      console.log(userData[0].user._id);
+
       
       setAdminPosts(adminData || []);
       setUserPosts(userData || []);
