@@ -30,7 +30,7 @@ const App = () => {
           <Route index element={<Dashboard />} />
 
           {/* Add more protected routes here */}
-          <Route path="/attendance" element={<Attendance userId={user?.id} />} />
+          <Route path="/attendance" element={<Attendance userId={user._id} />} />
           <Route path="/posts" element={<Posts />} />
           {/* <Route path="reports" element={<Reports />} /> */}
           <Route path="/profile" element={<Profile />} />

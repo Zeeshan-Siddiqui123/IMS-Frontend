@@ -18,6 +18,11 @@ export class UserRepo {
     return response.data
   }
 
+    async updateUser(id: string, userData: any) {
+    const response = await api.put(`/api/user/update/${id}`, userData)
+    return response.data
+  }
+
   async logoutUser(){
     const response = await api.post("/api/user/logout")
     return response.data
