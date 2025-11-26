@@ -3,6 +3,7 @@ import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { attRepo } from "@/repositories/attRepo";
 import Loader from "@/components/Loader";
+import { useAuthStore } from "@/hooks/store/authStore";
 
 interface AttendanceData {
   status: string;
@@ -18,59 +19,70 @@ interface HistoryRecord {
   status: string;
 }
 
-interface Props {
-  userId: string;
-}
-
-const Attendance: React.FC<Props> = ({ userId }) => {
+const Attendance: React.FC = () => {
+  const { user } = useAuthStore(); // Get user directly from store
   const [attendance, setAttendance] = useState<AttendanceData | null>(null);
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // ✅ Load today's attendance
   useEffect(() => {
     const fetchAttendance = async () => {
+      if (!user?._id) {
+        console.error("User ID not available");
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const res = await attRepo.getTodayStatus(userId);
+        const res = await attRepo.getTodayStatus(user._id);
         setAttendance(res || null);
       } catch (err: any) {
-        console.error(err);
+        console.error("Error fetching attendance:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchAttendance();
-  }, [userId]);
+  }, [user?._id]);
 
   // ✅ Load user attendance history
   useEffect(() => {
     const fetchHistory = async () => {
+      if (!user?._id) {
+        console.error("User ID not available");
+        return;
+      }
+
       setIsHistoryLoading(true);
       try {
-        const res = await attRepo.getUserHistory(userId);
+        const res = await attRepo.getUserHistory(user._id);
         setHistory(res.history || []);
       } catch (err: any) {
-        console.error(err);
+        console.error("Error fetching history:", err);
       } finally {
         setIsHistoryLoading(false);
       }
     };
     fetchHistory();
-  }, [userId]);
+  }, [user?._id]);
 
   // ✅ Columns for Ant Design Table
   const columns: ColumnsType<HistoryRecord> = [
     {
-    title: "Date",
-    dataIndex: "createdAt", // ✅ use backend timestamp field
-    key: "createdAt",
-    render: (createdAt: string) =>
-      createdAt
-        ? new Date(createdAt).toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
-        : "—",
-  },
+      title: "Date",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (createdAt: string) =>
+        createdAt
+          ? new Date(createdAt).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "—",
+    },
     {
       title: "Check In",
       dataIndex: "checkInTime",
@@ -92,6 +104,15 @@ const Attendance: React.FC<Props> = ({ userId }) => {
     },
   ];
 
+  // Show loader while user data is being fetched
+  if (!user?._id) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader />
+      </div>
+    );
+  }
+
   const isCheckedIn = Boolean(attendance?.checkInTime);
   const isCheckedOut = Boolean(attendance?.checkOutTime);
 
@@ -99,7 +120,11 @@ const Attendance: React.FC<Props> = ({ userId }) => {
     <div className="flex flex-col gap-6">
       <h2 className="text-lg font-semibold ml-5 mt-5">Today's Status</h2>
 
-      {isCheckedIn && (
+      {isLoading ? (
+        <div className="flex justify-center items-center py-4">
+          <Loader />
+        </div>
+      ) : isCheckedIn ? (
         <div className="bg-gray-100 dark:bg-neutral-800 p-3 rounded-md shadow-sm text-sm w-fit ml-5">
           <p>
             <span className="font-semibold">Status:</span>{" "}
@@ -118,6 +143,8 @@ const Attendance: React.FC<Props> = ({ userId }) => {
               : "Not checked out yet"}
           </p>
         </div>
+      ) : (
+        <p className="text-sm text-gray-500 ml-5">No check-in recorded today.</p>
       )}
 
       {/* ✅ History Table */}
@@ -143,4 +170,4 @@ const Attendance: React.FC<Props> = ({ userId }) => {
   );
 };
 
-export default Attendance;
+export default Attendance;

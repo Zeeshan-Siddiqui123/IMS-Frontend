@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { userRepo } from "../repositories/userRepo"
 import { useAuthStore } from "@/hooks/store/authStore"
+import Loader from "@/components/Loader"
 
 interface PrivateRouteProps {
   children: React.ReactNode
@@ -33,12 +34,11 @@ const PrivateRoute = ({ children }: PrivateRouteProps) => {
     verifyAuth()
   }, [isAuthenticated, setUser, setLoading])
 
-  if (isChecking || isLoading) {
+  if (isChecking ) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verifying authentication...</p>
+          <Loader/> 
         </div>
       </div>
     )

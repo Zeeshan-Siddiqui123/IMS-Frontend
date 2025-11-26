@@ -6,18 +6,10 @@ import PrivateRoute from "./auth/PrivateRoute"
 import Dashboard from "./Pages/Dashboard"
 import UserLayout from "./components/layout/userLayout"
 import Attendance from "./Pages/Attendance"
-
-// import Attendance from "./components/Attendance"
-import { useAuthStore } from "./hooks/store/authStore"
 import Posts from "./Pages/Posts"
 import Profile from "./Pages/Profile"
 
-
 const App = () => {
-  const { user } = useAuthStore() 
-
-  // const { user } = useAuthStore()
-
   return (
     <Router>
       <Routes>
@@ -28,11 +20,10 @@ const App = () => {
         {/* Protected routes with layout */}
         <Route path="/" element={<PrivateRoute> <UserLayout /> </PrivateRoute>}>
           <Route index element={<Dashboard />} />
-
-          {/* Add more protected routes here */}
-          <Route path="/attendance" element={<Attendance userId={user._id} />} />
+          
+          {/* No need to pass userId prop anymore */}
+          <Route path="/attendance" element={<Attendance />} />
           <Route path="/posts" element={<Posts />} />
-          {/* <Route path="reports" element={<Reports />} /> */}
           <Route path="/profile" element={<Profile />} />
         </Route>
 

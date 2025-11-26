@@ -18,7 +18,7 @@ export function SiteHeader() {
         />
         <h1 className="text-base font-medium">{APPNAME}</h1>
         <div className="ml-auto flex items-center gap-2">
-          <MarkAttendance userId={user?.id} />
+          <MarkAttendance userId={user?._id} />
         </div>
       </div>
     </header>
