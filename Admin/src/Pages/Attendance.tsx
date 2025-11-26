@@ -2,6 +2,8 @@ import { useEffect, useState } from "react"
 import { attendanceRepo } from "@/repositories/attendanceRepo"
 import { Button } from "@/components/ui/button"
 import { Input, Select, Table, message } from "antd"
+import Loader from "@/components/Loader"
+
 
 const { Option } = Select
 
@@ -18,12 +20,12 @@ const Attendance = () => {
       setLoading(true)
       const data = await attendanceRepo.getAttendanceHistory()
       setAllHistory(data || [])
-      filterByDate("today", data || []) // ⏰ default
+      filterByDate("today", data || []) 
     } catch (error) {
       console.error("Error fetching all history:", error)
       message.error("Failed to fetch history")
     } finally {
-      setLoading(false)
+      setLoading(false) 
     }
   }
 
@@ -169,6 +171,13 @@ const Attendance = () => {
         time ? new Date(time).toLocaleTimeString() : "—",
     },
   ]
+  if (loading) {
+  return (
+    <div className="flex  items-center justify-center h-screen">
+      <Loader /> {/* Apka custom Loader component */}
+    </div>
+  )
+}
 
   return (
     <div className="p-6 space-y-4">
@@ -189,7 +198,6 @@ const Attendance = () => {
       <Table
         columns={columns}
         dataSource={filteredHistory}
-        loading={loading}
         pagination={false}
         locale={{ emptyText: "No attendance records found." }}
         className="mt-4"

@@ -25,6 +25,11 @@ export class UserRepo {
     return response.data
   }
 
+  async loginAdmin(Data: any) {
+    const response = await api.post(`/api/admin/login`, Data)
+    return response.data
+  }
+
     async getEnums(){
     const response = await api.get("/api/user/enums")
     return response.data

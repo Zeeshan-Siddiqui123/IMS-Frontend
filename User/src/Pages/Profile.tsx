@@ -123,10 +123,7 @@ export default function ProfileShadCN() {
         {/* Tabs for Details / Contact */}
         <Card className="p-6">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="contact">Contact</TabsTrigger>
-            </TabsList>
+            
 
             <TabsContent value="details" className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {profileFields.map((field, idx) => (
@@ -137,7 +134,7 @@ export default function ProfileShadCN() {
               ))}
             </TabsContent>
 
-            <TabsContent value="contact" className="mt-6 space-y-4">
+            {/* <TabsContent value="contact" className="mt-6 space-y-4">
               <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-md">
                 <MailIcon className="w-5 h-5 text-black-" />
                 <div>
@@ -159,7 +156,7 @@ export default function ProfileShadCN() {
                   <p className="font-medium text-gray-900">{user?.CNIC || "N/A"}</p>
                 </div>
               </div>
-            </TabsContent>
+            </TabsContent> */}
           </Tabs>
         </Card>
 

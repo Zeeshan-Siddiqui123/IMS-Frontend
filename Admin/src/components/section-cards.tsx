@@ -18,25 +18,25 @@ export function SectionCards() {
 
   useEffect(() => {
     // Fetch Students
-    fetch("http://localhost:3000/user/signup")
+    fetch("http://localhost:3000/api/user/signup")
       .then((res) => res.json())
       .then((data) => setStudents(data.length || 0))
       .catch((err) => console.error("Students Error:", err))
 
     // Fetch PMs
-    fetch("http://localhost:3000/admin/pm")
+    fetch("http://localhost:3000/api/admin/pm")
       .then((res) => res.json())
       .then((data) => setPm(data.length || 0))
       .catch((err) => console.error("PM Error:", err))
 
     // Fetch Projects
-    fetch("http://localhost:3000/admin/projects")
+    fetch("http://localhost:3000/api/admin/projects")
       .then((res) => res.json())
       .then((data) => setProjects(data.length || 0))
       .catch((err) => console.error("Projects Error:", err))
 
     // Fetch Teams
-    fetch("http://localhost:3000/admin/team")
+    fetch("http://localhost:3000/api/admin/team")
       .then((res) => res.json())
       .then((data) => setTeams(data.length || 0))
       .catch((err) => console.error("Teams Error:", err))
