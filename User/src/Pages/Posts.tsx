@@ -120,24 +120,24 @@ const Posts = () => {
   return (
     <div className="p-6">
       <UrlBreadcrumb />
-      <div className="text-2xl font-bold mb-6">User Dashboard</div>
+      {/* <div className="text-2xl font-bold mb-6">User Dashboard</div> */}
 
       {/* Tabs */}
       <div className="flex gap-3 mb-6">
         <Button
           variant={activeTab === "admin" ? "default" : "outline"}
           onClick={() => setActiveTab("admin")}
-          className={activeTab === "admin" ? "bg-blue-600 text-white" : ""}
+          className={activeTab === "admin" ? "bg-black text-white" : ""}
         >
-          📢 Admin Announcements
+          Admin Announcements
         </Button>
 
         <Button
           variant={activeTab === "user" ? "default" : "outline"}
           onClick={() => setActiveTab("user")}
-          className={activeTab === "user" ? "bg-green-600 text-white" : ""}
+          className={activeTab === "user" ? "bg-black text-white" : ""}
         >
-          👥 User Posts
+         User Posts
         </Button>
       </div>
 
@@ -168,10 +168,8 @@ const Posts = () => {
           {/* User Posts */}
           {activeTab === "user" && (
             <div className="space-y-6 flex flex-col items-center overflow-y-auto max-h-[70vh]">
-              <div className="flex justify-between w-full mb-4 px-4">
-                <h2 className="text-xl font-semibold text-green-600">
-                  👥 User Posts
-                </h2>
+              <div className="flex justify-end w-full mb-4 px-4">
+               
                 <Button
                   onClick={() => setIsModalOpen(true)}
                   className="bg-black text-white hover:bg-gray-800"
