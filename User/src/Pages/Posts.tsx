@@ -38,7 +38,6 @@ const Posts = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<"admin" | "user">("admin");
 
-  // Pagination states
   const [adminPage, setAdminPage] = useState(1);
   const [userPage, setUserPage] = useState(1);
   const [adminHasMore, setAdminHasMore] = useState(true);
@@ -54,7 +53,6 @@ const Posts = () => {
     link: "",
   });
 
-  // Fetch Posts with Backend Pagination
   const fetchPosts = async (page: number, type: "admin" | "user", append = false) => {
     try {
       if (!append) setLoading(true);
@@ -83,7 +81,6 @@ const Posts = () => {
     }
   };
 
-  // Infinite Scroll Observer
   const lastPostRef = useCallback(
     (node: HTMLDivElement) => {
       if (loadingMore) return;
@@ -104,7 +101,6 @@ const Posts = () => {
     [loadingMore, activeTab, adminHasMore, userHasMore]
   );
 
-  // Load more posts when page changes
   useEffect(() => {
     if (adminPage > 1) {
       fetchPosts(adminPage, "admin", true);
@@ -117,7 +113,6 @@ const Posts = () => {
     }
   }, [userPage]);
 
-  // Initial load
   useEffect(() => {
     fetchPosts(1, "admin");
     fetchPosts(1, "user");
@@ -145,13 +140,7 @@ const Posts = () => {
     try {
       setIsCreating(true);
 
-      const form = {
-        title: formData.title,
-        description: formData.description,
-        link: formData.link,
-      };
-
-      const response = await postRepo.createUserPost(form);
+      const response = await postRepo.createUserPost(formData);
       message.success("Post created successfully");
 
       if (response?.post) {
@@ -197,33 +186,43 @@ const Posts = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <UrlBreadcrumb />
 
-      <div className="flex justify-between items-center mb-6">
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "admin" | "user")}>
-          <TabsList>
+      {/* TOP HEADER RESPONSIVE */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as "admin" | "user")}
+        >
+          <TabsList className="flex w-full sm:w-auto">
             <TabsTrigger value="admin">Admin Announcements</TabsTrigger>
             <TabsTrigger value="user">User Posts</TabsTrigger>
           </TabsList>
         </Tabs>
 
-        <Button onClick={() => setIsModalOpen(true)}>Create Post</Button>
+        <Button
+          onClick={() => setIsModalOpen(true)}
+          className="w-full sm:w-auto"
+        >
+          Create Post
+        </Button>
       </div>
 
       {loading ? (
         <Loader />
       ) : (
         <>
-          {/* Admin Posts */}
+          {/* ADMIN POSTS */}
           {activeTab === "admin" && (
-            <div className="space-y-6 flex flex-col items-center overflow-y-auto max-h-[70vh]">
+            <div className="space-y-6 flex flex-col items-center overflow-y-auto max-h-[75vh] w-full px-2">
               {adminPosts.length > 0 ? (
                 <>
                   {adminPosts.map((post, index) => (
                     <div
                       key={post._id}
                       ref={index === adminPosts.length - 1 ? lastPostRef : null}
+                      className="w-full max-w-2xl"
                     >
                       <FacebookPostCard
                         title={post.title}
@@ -234,8 +233,9 @@ const Posts = () => {
                       />
                     </div>
                   ))}
+
                   {loadingMore && <Loader />}
-                  {!adminHasMore && adminPosts.length > 0 && (
+                  {!adminHasMore && (
                     <p className="text-gray-500 text-sm">No more posts to load</p>
                   )}
                 </>
@@ -245,15 +245,16 @@ const Posts = () => {
             </div>
           )}
 
-          {/* User Posts */}
+          {/* USER POSTS */}
           {activeTab === "user" && (
-            <div className="space-y-6 flex flex-col items-center overflow-y-auto h-[75vh]">
+            <div className="space-y-6 flex flex-col items-center overflow-y-auto max-h-[75vh] w-full px-2">
               {userPosts.length > 0 ? (
                 <>
                   {userPosts.map((post, index) => (
                     <div
                       key={post._id}
                       ref={index === userPosts.length - 1 ? lastPostRef : null}
+                      className="w-full max-w-2xl"
                     >
                       <FacebookPostCard
                         postId={post._id}
@@ -262,15 +263,15 @@ const Posts = () => {
                         link={post.link}
                         createdAt={post.createdAt}
                         authorName={post.user?.name}
-                        // Jani: Post banane wale ki ID pass kar di
                         authorId={post.user?._id}
                         onDelete={handleDelete}
                         onEdit={handleEdit}
                       />
                     </div>
                   ))}
+
                   {loadingMore && <Loader />}
-                  {!userHasMore && userPosts.length > 0 && (
+                  {!userHasMore && (
                     <p className="text-gray-500 text-sm">No more posts to load</p>
                   )}
                 </>
@@ -282,17 +283,17 @@ const Posts = () => {
         </>
       )}
 
-      {/* Create Post Dialog */}
+      {/* CREATE POST MODAL */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="w-[95%] sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Create Post</DialogTitle>
           </DialogHeader>
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label>Title</Label>
               <Input
-                id="title"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
@@ -303,9 +304,8 @@ const Posts = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label>Description</Label>
               <Textarea
-                id="description"
                 name="description"
                 rows={4}
                 value={formData.description}
@@ -313,13 +313,14 @@ const Posts = () => {
                 disabled={isCreating}
                 className={errors.description ? "border-red-500" : ""}
               />
-              {errors.description && <p className="text-red-500 text-xs">{errors.description}</p>}
+              {errors.description && (
+                <p className="text-red-500 text-xs">{errors.description}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="link">Link</Label>
+              <Label>Link</Label>
               <Input
-                id="link"
                 name="link"
                 value={formData.link}
                 onChange={handleChange}
@@ -329,6 +330,7 @@ const Posts = () => {
               {errors.link && <p className="text-red-500 text-xs">{errors.link}</p>}
             </div>
           </div>
+
           <DialogFooter>
             <Button
               variant="outline"
@@ -340,6 +342,7 @@ const Posts = () => {
             >
               Cancel
             </Button>
+
             <Button onClick={handleCreate} disabled={isCreating}>
               {isCreating ? "Creating..." : "Create Post"}
             </Button>

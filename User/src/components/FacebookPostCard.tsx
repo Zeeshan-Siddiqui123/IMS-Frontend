@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { FaThumbsUp, FaRegCommentDots, FaShare, FaEllipsisV, FaEdit, FaTrash } from "react-icons/fa";
+import {
+  FaThumbsUp,
+  FaRegCommentDots,
+  FaShare,
+  FaEllipsisV,
+  FaEdit,
+  FaTrash,
+} from "react-icons/fa";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,10 +37,14 @@ interface PostCardProps {
   link?: string;
   createdAt: string;
   authorName?: string;
-  authorId?: string; // Jani: Ye naya prop add kiya hai ID match karne ke liye
+  authorId?: string; // owner ID
   isAdmin?: boolean;
+
   onDelete?: (postId: string) => void;
-  onEdit?: (postId: string, data: { title: string; description: string; link: string }) => void;
+  onEdit?: (
+    postId: string,
+    data: { title: string; description: string; link: string }
+  ) => void;
 }
 
 const FacebookPostCard: React.FC<PostCardProps> = ({
@@ -43,7 +54,7 @@ const FacebookPostCard: React.FC<PostCardProps> = ({
   link,
   createdAt,
   authorName,
-  authorId, // Jani: Isko yahan destructure kiya
+  authorId = "", // FIX: default empty string → avoids undefined error
   isAdmin = false,
   onDelete,
   onEdit,
@@ -51,6 +62,7 @@ const FacebookPostCard: React.FC<PostCardProps> = ({
   const [showMenu, setShowMenu] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
   const [editForm, setEditForm] = useState({
     title,
     description,
@@ -58,13 +70,15 @@ const FacebookPostCard: React.FC<PostCardProps> = ({
   });
 
   const { user, isAuthenticated } = useAuthStore();
-  
-  // Jani: Ye logic check karegi ke login banda hi post ka malik hai ya nahi
-  const isOwner = isAuthenticated && user?._id === authorId;
 
+  // FIX: ensure user exists before comparison
+  const isOwner = isAuthenticated && user?._id && user?._id === authorId;
+
+  // time ago
   const formatTimeAgo = (dateString: string) => {
-    const seconds = Math.floor((new Date().getTime() - new Date(dateString).getTime()) / 1000);
-
+    const seconds = Math.floor(
+      (new Date().getTime() - new Date(dateString).getTime()) / 1000
+    );
     const intervals: any = {
       year: 31536000,
       month: 2592000,
@@ -76,23 +90,23 @@ const FacebookPostCard: React.FC<PostCardProps> = ({
 
     for (let key in intervals) {
       const diff = Math.floor(seconds / intervals[key]);
-      if (diff >= 1) {
-        return `${diff} ${key}${diff > 1 ? "s" : ""} ago`;
-      }
+      if (diff >= 1) return `${diff} ${key}${diff > 1 ? "s" : ""} ago`;
     }
 
     return "Just now";
   };
 
-  const circleContent = isAdmin ? "A" : authorName ? authorName[0].toUpperCase() : "?";
+  const circleContent = isAdmin
+    ? "A"
+    : authorName
+    ? authorName[0].toUpperCase()
+    : "?";
+
   const displayName = isAdmin ? "Admin" : authorName || "User";
 
   const handleDelete = () => {
-    if (postId && onDelete) {
-      onDelete(postId);
-    }
+    if (postId && onDelete) onDelete(postId);
     setIsDeleteDialogOpen(false);
-    setShowMenu(false);
   };
 
   const handleEditSubmit = () => {
@@ -104,21 +118,25 @@ const FacebookPostCard: React.FC<PostCardProps> = ({
 
   return (
     <>
-      <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-md w-[600px] border border-gray-200 dark:border-neutral-800 relative">
-        {/* Header */}
+      <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-md w-full max-w-xl mx-auto border border-gray-200 dark:border-neutral-800 relative">
+
+        {/* HEADER */}
         <div className="flex items-center gap-3 p-4 relative">
           <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-neutral-700 flex items-center justify-center text-white font-semibold">
             {circleContent}
           </div>
+
           <div className="flex-1">
-            <p className="font-semibold text-gray-900 dark:text-white">{displayName}</p>
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {displayName}
+            </p>
             <span className="text-xs text-gray-500">
               {formatTimeAgo(createdAt)}
             </span>
           </div>
 
-          {/* Jani: Yahan check badal diya hai, ab sirf owner ko menu dikhega */}
-          {!isAdmin && isOwner && postId && (
+          {/* Only Owner Can See Edit/Delete */}
+          {isOwner && postId && (
             <div className="relative">
               <button
                 onClick={() => setShowMenu(!showMenu)}
@@ -128,7 +146,7 @@ const FacebookPostCard: React.FC<PostCardProps> = ({
               </button>
 
               {showMenu && (
-                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-700 z-10">
+                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-700 z-20">
                   <button
                     onClick={() => {
                       setIsEditModalOpen(true);
@@ -138,12 +156,13 @@ const FacebookPostCard: React.FC<PostCardProps> = ({
                   >
                     <FaEdit /> Edit
                   </button>
+
                   <button
                     onClick={() => {
                       setIsDeleteDialogOpen(true);
                       setShowMenu(false);
                     }}
-                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 text-left"
+                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 text-left"
                   >
                     <FaTrash /> Delete
                   </button>
@@ -153,15 +172,17 @@ const FacebookPostCard: React.FC<PostCardProps> = ({
           )}
         </div>
 
-        {/* Title */}
-        <p className="px-4 pb-1 font-semibold text-gray-900 dark:text-white">{title}</p>
+        {/* TITLE */}
+        <p className="px-4 pb-1 font-semibold text-gray-900 dark:text-white">
+          {title}
+        </p>
 
-        {/* Description */}
+        {/* DESCRIPTION */}
         <p className="px-4 pb-3 text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
           {description}
         </p>
 
-        {/* Optional Link */}
+        {/* LINK */}
         {link && (
           <a
             href={link}
@@ -173,10 +194,9 @@ const FacebookPostCard: React.FC<PostCardProps> = ({
           </a>
         )}
 
-        {/* Divider */}
         <div className="my-3 h-[1px] bg-gray-200 dark:bg-neutral-700" />
 
-        {/* Like / Comment / Share */}
+        {/* ACTION BUTTONS */}
         <div className="flex justify-around py-2 text-gray-600 dark:text-gray-300">
           <button className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-neutral-800 px-5 py-2 rounded-md">
             <FaThumbsUp /> Like
@@ -190,67 +210,71 @@ const FacebookPostCard: React.FC<PostCardProps> = ({
         </div>
       </div>
 
-      {/* Edit Dialog */}
+      {/* EDIT MODAL */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="w-[95%] sm:max-w-[450px]">
           <DialogHeader>
             <DialogTitle>Edit Post</DialogTitle>
           </DialogHeader>
+
           <div className="space-y-4 mt-4">
             <div>
-              <Label htmlFor="title">Title</Label>
+              <Label>Title</Label>
               <Input
-                id="title"
-                type="text"
                 value={editForm.title}
-                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                className="mt-1"
+                onChange={(e) =>
+                  setEditForm({ ...editForm, title: e.target.value })
+                }
               />
             </div>
+
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label>Description</Label>
               <Textarea
-                id="description"
                 rows={4}
                 value={editForm.description}
-                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                className="mt-1"
+                onChange={(e) =>
+                  setEditForm({ ...editForm, description: e.target.value })
+                }
               />
             </div>
+
             <div>
-              <Label htmlFor="link">Link</Label>
+              <Label>Link</Label>
               <Input
-                id="link"
-                type="text"
                 value={editForm.link}
-                onChange={(e) => setEditForm({ ...editForm, link: e.target.value })}
-                className="mt-1"
+                onChange={(e) =>
+                  setEditForm({ ...editForm, link: e.target.value })
+                }
               />
             </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditSubmit}>
-              Update
-            </Button>
+            <Button onClick={handleEditSubmit}>Update</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* DELETE CONFIRMATION */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Post</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this post? This action cannot be undone.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
