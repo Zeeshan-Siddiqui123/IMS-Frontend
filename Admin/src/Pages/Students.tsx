@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react"
 import { message, Modal, Select, Radio } from "antd"
 import { Button } from "@/components/ui/button"
 import { MdDeleteSweep, MdEditSquare, MdPersonAdd } from "react-icons/md"
+import { FaWhatsapp } from "react-icons/fa"
 import {
   Table,
   TableHeader,
@@ -54,6 +55,33 @@ const Students: React.FC = () => {
     gender: "",
     shift: "",
   })
+
+  // Format phone number for WhatsApp (add +92 if not present)
+  const formatPhoneForWhatsApp = (phone: string) => {
+    if (!phone) return ""
+
+    // Remove all non-numeric characters
+    let cleaned = phone.replace(/\D/g, "")
+
+    // If starts with 0, replace with 92
+    if (cleaned.startsWith("0")) {
+      cleaned = "92" + cleaned.substring(1)
+    }
+    // If doesn't start with 92, add it
+    else if (!cleaned.startsWith("92")) {
+      cleaned = "92" + cleaned
+    }
+
+    return cleaned
+  }
+
+  // Open WhatsApp with formatted number
+  const handleWhatsAppContact = (phone: string, name: string) => {
+    const formattedPhone = formatPhoneForWhatsApp(phone)
+    const message = encodeURIComponent(`Hello ${name}, `)
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${message}`
+    window.open(whatsappUrl, "_blank")
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -220,18 +248,27 @@ const Students: React.FC = () => {
                       <TableCell>{user.shift}</TableCell>
                       <TableCell>
                         <span
-                          className={`px-2 py-1 rounded-full text-center text-sm font-semibold ${
-                            status === "Present"
+                          className={`px-2 py-1 rounded-full flex flex-row items-center justify-center text-sm font-semibold ${status === "Present"
                               ? "bg-green-100 text-green-600"
                               : status === "Absent"
-                              ? "bg-red-100 text-red-600"
-                              : "bg-yellow-100 text-yellow-600"
-                          }`}
+                                ? "bg-red-100 text-red-600"
+                                : "bg-yellow-100 text-yellow-600"
+                            }`}
                         >
                           {status || "N/A"}
                         </span>
                       </TableCell>
+
+
                       <TableCell className="flex gap-2 justify-end">
+                        <Button
+                          variant="default"
+                          size="icon"
+                          className="cursor-pointer rounded-full bg-green-600 hover:bg-green-700"
+                          onClick={() => handleWhatsAppContact(user.phone, user.name)}
+                        >
+                          <FaWhatsapp className="text-white" />
+                        </Button>
                         <Button
                           variant="default"
                           size="icon"
@@ -254,7 +291,7 @@ const Students: React.FC = () => {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={12} className="text-center py-8 text-gray-500">
                     No users found
                   </TableCell>
                 </TableRow>

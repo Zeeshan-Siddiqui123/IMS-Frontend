@@ -21,6 +21,9 @@ const Attendance = () => {
       const data = await attendanceRepo.getAttendanceHistory()
       setAllHistory(data || [])
       filterByDate("today", data || []) 
+
+      console.log(data);
+      
     } catch (error) {
       console.error("Error fetching all history:", error)
       message.error("Failed to fetch history")
