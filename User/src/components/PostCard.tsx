@@ -47,7 +47,7 @@ interface PostCardProps {
   ) => void;
 }
 
-const FacebookPostCard: React.FC<PostCardProps> = ({
+const PostCard: React.FC<PostCardProps> = ({
   postId,
   title,
   description,
@@ -284,4 +284,4 @@ const FacebookPostCard: React.FC<PostCardProps> = ({
   );
 };
 
-export default FacebookPostCard;
+export default PostCard;
