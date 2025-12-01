@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,12 +10,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { message } from "antd";
 import { postRepo } from "../repositories/postRepo";
 import UrlBreadcrumb from "@/components/UrlBreadcrumb";
-import Loader from "@/components/Loader";
-import FacebookPostCard from "../components/FacebookPostCard";
+import PostCard from "../components/PostCard";
+import PaginatedList from "../components/PaginatedList";
 
 interface Post {
   _id: string;
@@ -30,93 +30,11 @@ interface Post {
 }
 
 const Posts = () => {
-  const [adminPosts, setAdminPosts] = useState<Post[]>([]);
-  const [userPosts, setUserPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"admin" | "user">("admin");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({ title: "", description: "", link: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [activeTab, setActiveTab] = useState<"admin" | "user">("admin");
-
-  const [adminPage, setAdminPage] = useState(1);
-  const [userPage, setUserPage] = useState(1);
-  const [adminHasMore, setAdminHasMore] = useState(true);
-  const [userHasMore, setUserHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  const observer = useRef<IntersectionObserver | null>(null);
-  const POSTS_PER_PAGE = 10;
-
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    link: "",
-  });
-
-  const fetchPosts = async (page: number, type: "admin" | "user", append = false) => {
-    try {
-      if (!append) setLoading(true);
-      else setLoadingMore(true);
-
-      const response =
-        type === "admin"
-          ? await postRepo.getAllPosts(page, POSTS_PER_PAGE)
-          : await postRepo.getAllUsersPosts(page, POSTS_PER_PAGE);
-
-      const { posts, pagination } = response;
-
-      if (type === "admin") {
-        setAdminPosts((prev) => (append ? [...prev, ...posts] : posts));
-        setAdminHasMore(pagination.hasMore);
-      } else {
-        setUserPosts((prev) => (append ? [...prev, ...posts] : posts));
-        setUserHasMore(pagination.hasMore);
-      }
-    } catch (error) {
-      message.error("Failed to fetch posts");
-      console.error(error);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
-  const lastPostRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (loadingMore) return;
-      if (observer.current) observer.current.disconnect();
-
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-          if (activeTab === "admin" && adminHasMore) {
-            setAdminPage((prev) => prev + 1);
-          } else if (activeTab === "user" && userHasMore) {
-            setUserPage((prev) => prev + 1);
-          }
-        }
-      });
-
-      if (node) observer.current.observe(node);
-    },
-    [loadingMore, activeTab, adminHasMore, userHasMore]
-  );
-
-  useEffect(() => {
-    if (adminPage > 1) {
-      fetchPosts(adminPage, "admin", true);
-    }
-  }, [adminPage]);
-
-  useEffect(() => {
-    if (userPage > 1) {
-      fetchPosts(userPage, "user", true);
-    }
-  }, [userPage]);
-
-  useEffect(() => {
-    fetchPosts(1, "admin");
-    fetchPosts(1, "user");
-  }, []);
 
   const resetForm = () => {
     setFormData({ title: "", description: "", link: "" });
@@ -139,17 +57,8 @@ const Posts = () => {
   const handleCreate = async () => {
     try {
       setIsCreating(true);
-
       const response = await postRepo.createUserPost(formData);
       message.success("Post created successfully");
-
-      if (response?.post) {
-        setUserPosts((prev) => [response.post, ...prev]);
-      } else {
-        setUserPage(1);
-        fetchPosts(1, "user");
-      }
-
       setIsModalOpen(false);
       resetForm();
     } catch (error: any) {
@@ -167,7 +76,6 @@ const Posts = () => {
     try {
       await postRepo.deleteUserPost(postId);
       message.success("Post deleted successfully");
-      setUserPosts((prev) => prev.filter((post) => post._id !== postId));
     } catch (error: any) {
       message.error(error.response?.data?.message || "Failed to delete post");
     }
@@ -177,9 +85,6 @@ const Posts = () => {
     try {
       await postRepo.updateUserPost(postId, updatedData);
       message.success("Post updated successfully");
-      setUserPosts((prev) =>
-        prev.map((post) => (post._id === postId ? { ...post, ...updatedData } : post))
-      );
     } catch (error: any) {
       message.error(error.response?.data?.message || "Failed to update post");
     }
@@ -189,7 +94,6 @@ const Posts = () => {
     <div className="p-4 sm:p-6">
       <UrlBreadcrumb />
 
-      {/* TOP HEADER RESPONSIVE */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <Tabs
           value={activeTab}
@@ -201,86 +105,73 @@ const Posts = () => {
           </TabsList>
         </Tabs>
 
-        <Button
-          onClick={() => setIsModalOpen(true)}
-          className="w-full sm:w-auto"
-        >
+        <Button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto">
           Create Post
         </Button>
       </div>
 
-      {loading ? (
-        <Loader />
-      ) : (
-        <>
-          {/* ADMIN POSTS */}
-          {activeTab === "admin" && (
-            <div className="space-y-6 flex flex-col items-center overflow-y-auto max-h-[75vh] w-full px-2">
-              {adminPosts.length > 0 ? (
-                <>
-                  {adminPosts.map((post, index) => (
-                    <div
-                      key={post._id}
-                      ref={index === adminPosts.length - 1 ? lastPostRef : null}
-                      className="w-full max-w-2xl"
-                    >
-                      <FacebookPostCard
-                        title={post.title}
-                        description={post.description}
-                        link={post.link}
-                        createdAt={post.createdAt}
-                        isAdmin={true}
-                      />
-                    </div>
-                  ))}
-
-                  {loadingMore && <Loader />}
-                  {!adminHasMore && (
-                    <p className="text-gray-500 text-sm">No more posts to load</p>
-                  )}
-                </>
-              ) : (
-                <p className="text-gray-500">No admin posts found</p>
-              )}
-            </div>
+      {activeTab === "admin" && (
+        <PaginatedList<Post>
+          key="admin-posts"
+          fetchData={async (page, limit) => {
+            const res = await postRepo.getAllPosts(page, limit);
+            // Map backend response to expected format
+            return {
+              items: res.posts || res.data || [], // Handle both formats
+              pagination: {
+                currentPage: res.pagination.currentPage,
+                totalPages: res.pagination.totalPages,
+                totalPosts: res.pagination.total,
+                hasMore: res.pagination.hasMore,
+                postsPerPage: res.pagination.limit
+              }
+            };
+          }}
+          renderItem={(post) => (
+            <PostCard
+              title={post.title}
+              description={post.description}
+              link={post.link}
+              createdAt={post.createdAt}
+              isAdmin
+            />
           )}
+          pageSize={10}
+        />
+      )}
 
-          {/* USER POSTS */}
-          {activeTab === "user" && (
-            <div className="space-y-6 flex flex-col items-center overflow-y-auto max-h-[75vh] w-full px-2">
-              {userPosts.length > 0 ? (
-                <>
-                  {userPosts.map((post, index) => (
-                    <div
-                      key={post._id}
-                      ref={index === userPosts.length - 1 ? lastPostRef : null}
-                      className="w-full max-w-2xl"
-                    >
-                      <FacebookPostCard
-                        postId={post._id}
-                        title={post.title}
-                        description={post.description}
-                        link={post.link}
-                        createdAt={post.createdAt}
-                        authorName={post.user?.name}
-                        authorId={post.user?._id}
-                        onDelete={handleDelete}
-                        onEdit={handleEdit}
-                      />
-                    </div>
-                  ))}
-
-                  {loadingMore && <Loader />}
-                  {!userHasMore && (
-                    <p className="text-gray-500 text-sm">No more posts to load</p>
-                  )}
-                </>
-              ) : (
-                <p className="text-gray-500">No user posts found</p>
-              )}
-            </div>
+      {activeTab === "user" && (
+        <PaginatedList<Post>
+          key="user-posts"
+          fetchData={async (page, limit) => {
+            const res = await postRepo.getAllUsersPosts(page, limit);
+            // Map backend response to expected format
+            return {
+              items: res.posts || res.data || [], // Handle both formats
+              pagination: {
+                currentPage: res.pagination.currentPage,
+                totalPages: res.pagination.totalPages,
+                totalPosts: res.pagination.total,
+                hasMore: res.pagination.hasMore,
+                postsPerPage: res.pagination.limit
+              }
+            };
+          }}
+          renderItem={(post) => (
+            <PostCard
+              postId={post._id}
+              title={post.title}
+              description={post.description}
+              link={post.link}
+              createdAt={post.createdAt}
+              authorName={post.user?.name}
+              authorId={post.user?._id}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+            />
           )}
-        </>
+          pageSize={10}
+        />
       )}
 
       {/* CREATE POST MODAL */}
