@@ -31,7 +31,6 @@ const SignUp: React.FC = () => {
     const fetchEnums = async () => {
       try {
         const res = await userRepo.getEnums();
-        // ✅ Backend expected: { courses, genders, shifts }
         setCourses(res.courses || []);
         setGenders(res.genders || []);
         setShifts(res.shifts || []);
@@ -44,16 +43,63 @@ const SignUp: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    if (name === "phone") {
+      // Remove all non-numeric characters
+      const cleaned = value.replace(/\D/g, "");
+      
+      // Limit to 10 digits (after +92)
+      if (cleaned.length <= 10) {
+        setFormData((prev) => ({ ...prev, [name]: cleaned }));
+      }
+    } else if (name === "CNIC") {
+      // Remove all non-numeric characters
+      const cleaned = value.replace(/\D/g, "");
+      
+      // Limit to 13 digits
+      if (cleaned.length <= 13) {
+        setFormData((prev) => ({ ...prev, [name]: cleaned }));
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSelectChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Format CNIC for display: XXXXX-XXXXXXX-X
+  const formatCNICDisplay = (cnic: string) => {
+    if (!cnic) return "";
+    const cleaned = cnic.replace(/\D/g, "");
+    
+    if (cleaned.length <= 5) return cleaned;
+    if (cleaned.length <= 12) {
+      return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
+    }
+    return `${cleaned.slice(0, 5)}-${cleaned.slice(5, 12)}-${cleaned.slice(12, 13)}`;
+  };
+
+  // Get CNIC formatted for database (with dashes)
+  const getCNICForDB = (cnic: string) => {
+    const cleaned = cnic.replace(/\D/g, "");
+    if (cleaned.length === 13) {
+      return `${cleaned.slice(0, 5)}-${cleaned.slice(5, 12)}-${cleaned.slice(12, 13)}`;
+    }
+    return cnic;
+  };
+
   const handleSubmit = async () => {
     try {
-      await userRepo.addUser(formData);
+      // Format data before sending to backend
+      const dataToSend = {
+        ...formData,
+        phone: formData.phone ? `92${formData.phone}` : "",
+        CNIC: getCNICForDB(formData.CNIC),
+      };
+      
+      await userRepo.addUser(dataToSend);
       message.success("User registered successfully");
       navigate("/login");
       setFormData({
@@ -89,8 +135,6 @@ const SignUp: React.FC = () => {
           { name: "name", label: "Full Name", type: "text", placeholder: "Enter your full name" },
           { name: "bq_id", label: "BQ ID", type: "text", placeholder: "Enter your BQ ID" },
           { name: "email", label: "Email", type: "email", placeholder: "Enter your email address" },
-          { name: "phone", label: "Phone", type: "text", placeholder: "Enter your phone number" },
-          { name: "CNIC", label: "CNIC", type: "text", placeholder: "Enter your CNIC" },
         ].map((input) => (
           <div key={input.name}>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -112,6 +156,61 @@ const SignUp: React.FC = () => {
             )}
           </div>
         ))}
+
+        {/* Phone Number Field */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Phone Number
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-gray-900 dark:text-white font-medium">
+              +92
+            </span>
+            <input
+              type="text"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="3001234567"
+              maxLength={10}
+              className={`block w-full rounded-md border pl-14 pr-3 py-2 text-gray-900 dark:text-white dark:bg-neutral-800 
+                focus:border-blue-600 focus:ring-blue-600 sm:text-sm
+                ${errors.phone ? "border-red-500" : "border-gray-300 dark:border-gray-600"}`}
+              autoComplete="off"
+            />
+          </div>
+          {errors.phone && (
+            <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+          )}
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Format: +92XXXXXXXXXX (10 digits after +92)
+          </p>
+        </div>
+
+        {/* CNIC Field */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            CNIC
+          </label>
+          <input
+            type="text"
+            name="CNIC"
+            value={formatCNICDisplay(formData.CNIC)}
+            onChange={handleChange}
+            placeholder="12345-1234567-1"
+            maxLength={15}
+            className={`block w-full rounded-md border px-3 py-2 text-gray-900 dark:text-white dark:bg-neutral-800 
+              focus:border-blue-600 focus:ring-blue-600 sm:text-sm
+              ${errors.CNIC ? "border-red-500" : "border-gray-300 dark:border-gray-600"}`}
+            autoComplete="off"
+          />
+          {errors.CNIC && (
+            <p className="text-red-500 text-xs mt-1">{errors.CNIC}</p>
+          )}
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Format: XXXXX-XXXXXXX-X (13 digits)
+          </p>
+        </div>
 
         {/* Password Field */}
         <div>
@@ -159,6 +258,9 @@ const SignUp: React.FC = () => {
               </Option>
             ))}
           </Select>
+          {errors.course && (
+            <p className="text-red-500 text-xs mt-1">{errors.course}</p>
+          )}
         </div>
 
         {/* Gender Radio Buttons */}
