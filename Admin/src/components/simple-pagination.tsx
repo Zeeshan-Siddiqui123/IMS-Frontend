@@ -70,7 +70,7 @@ export default function SimplePagination({
         </PaginationItem>
 
         {/* Page Numbers with Smart Ellipsis */}
-        {pageNumbers.map((page, index) => {
+        {pageNumbers.map((page) => {
           if (typeof page === 'string') {
             return (
               <PaginationItem key={page}>

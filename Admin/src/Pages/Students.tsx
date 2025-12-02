@@ -166,6 +166,8 @@ const Students: React.FC = () => {
     } catch (error: any) {
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors)
+        console.log(errors);
+        
       } else {
         message.error(error.response?.data?.message || "Action failed")
       }
