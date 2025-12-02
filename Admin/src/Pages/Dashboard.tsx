@@ -1,5 +1,5 @@
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
-import { message, Spin } from "antd"
+import { message } from "antd"
 import { SectionCards } from "@/components/section-cards"
 import {
   Table,
@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/table"
 import { useEffect, useState } from "react"
 import { userRepo } from "@/repositories/userRepo"
+import SimplePagination from "@/components/simple-pagination"
+import Loader from "@/components/Loader"
 
 interface User {
   _id: string
@@ -27,16 +29,39 @@ interface User {
 export default function Page() {
   const [loading, setLoading] = useState(true)
   const [users, setUsers] = useState<User[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalUsers, setTotalUsers] = useState(0)
+  const [limit] = useState(10)
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1) => {
+    setLoading(true)
     try {
-      const data = await userRepo.getAllUsers()
-      setUsers(data || [])
-    } catch {
-      message.error("Failed to fetch users")
+      // Fetch users with pagination
+      const usersResponse = await userRepo.getAllUsers(page, limit)
+
+      // Fetch status data with same pagination
+
+
+      // Extract data from paginated response
+      setUsers(usersResponse.data || [])
+      
+      setTotalPages(usersResponse.pagination?.totalPages || 1)
+      setTotalUsers(usersResponse.pagination?.total || 0)
+      setCurrentPage(usersResponse.pagination?.currentPage || page)
+      console.log(totalUsers);
+      
+    } catch (error) {
+      message.error("Failed to fetch users or attendance")
+      console.error("Fetch error:", error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    fetchUsers(page)
   }
 
   useEffect(() => {
@@ -50,54 +75,68 @@ export default function Page() {
           <SectionCards />
           <div className="px-4 lg:px-6">
             <ChartAreaInteractive />
+            
             <div className="rounded-lg border shadow-sm bg-white dark:bg-neutral-900 mt-4">
-            {loading ? (
-              <div className="flex justify-center items-center h-40">
-                <Spin size="large" />
-              </div>
-            ) : (
-              <div >
-                <Table >
-                <TableHeader className="bg-neutral-100 dark:bg-neutral-800">
-                  <TableRow>
-                    <TableHead className="w-12 text-center">#</TableHead>
-                    <TableHead>BQ Id</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>CNIC</TableHead>
-                    <TableHead>Course</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.length > 0 ? (
-                    users.map((user, index) => (
-                      <TableRow key={user._id}>
-                        <TableCell className="text-center">{index + 1}</TableCell>
-                        <TableCell>{user.bq_id}</TableCell>
-                        <TableCell>{user.name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>{user.phone}</TableCell>
-                        <TableCell>{user.CNIC}</TableCell>
-                        <TableCell>{user.course}</TableCell>
-                        
+              {loading ? (
+                <div className="flex justify-center items-center h-40">
+                  <Loader />
+                </div>
+                
+              ) : (
+                <div >
+                  
+                  <Table >
+                    <TableHeader className="bg-neutral-100 dark:bg-neutral-800">
+                      <TableRow>
+                        <TableHead className="w-12 text-center">#</TableHead>
+                        <TableHead>BQ Id</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>CNIC</TableHead>
+                        <TableHead>Course</TableHead>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                        No users found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-              </div>
-              
-            )}
-          </div>
+                    </TableHeader>
+                    <TableBody>
+                      {users.length > 0 ? (
+                        users.map((user, index) => (
+                          <TableRow key={user._id}>
+                            <TableCell className="text-center">{index + 1}</TableCell>
+                            <TableCell>{user.bq_id}</TableCell>
+                            <TableCell>{user.name}</TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>{user.phone}</TableCell>
+                            <TableCell>{user.CNIC}</TableCell>
+                            <TableCell>{user.course}</TableCell>
+
+                          </TableRow>
+                          
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                            No users found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                  {totalPages > 1 && (
+                                <div className="p-4 border-t">
+                                  <SimplePagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={handlePageChange}
+                                  />
+                                </div>
+                              )}
+                </div>
+
+              )}
+            </div>
           </div>
           
+
           {/* <DataTable  /> */}
         </div>
       </div>
