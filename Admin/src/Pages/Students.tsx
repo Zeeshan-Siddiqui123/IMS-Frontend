@@ -15,6 +15,7 @@ import { userRepo } from "@/repositories/userRepo"
 import Loader from "@/components/Loader"
 import { attendanceRepo } from "@/repositories/attendanceRepo"
 import { CiUnread, CiRead } from "react-icons/ci"
+import SimplePagination from "@/components/simple-pagination"
 
 const { Option } = Select
 
@@ -43,6 +44,13 @@ const Students: React.FC = () => {
   const [courses, setCourses] = useState<string[]>([])
   const [genders, setGenders] = useState<string[]>([])
   const [shifts, setShifts] = useState<string[]>([])
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalUsers, setTotalUsers] = useState(0)
+  const [limit] = useState(10) // Items per page
+
   const [formData, setFormData] = useState({
     name: "",
     bq_id: "",
@@ -78,8 +86,8 @@ const Students: React.FC = () => {
   // Open WhatsApp with formatted number
   const handleWhatsAppContact = (phone: string, name: string) => {
     const formattedPhone = formatPhoneForWhatsApp(phone)
-    const message = encodeURIComponent(`Hello ${name}, `)
-    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${message}`
+    const messageText = encodeURIComponent(`Hello ${name}, `)
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${messageText}`
     window.open(whatsappUrl, "_blank")
   }
 
@@ -92,17 +100,24 @@ const Students: React.FC = () => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1) => {
+    setLoading(true)
     try {
-      const [usersData, status] = await Promise.all([
-        userRepo.getAllUsers(),
-        attendanceRepo.getAllUserStatus(),
-      ])
-      setUsers(usersData || [])
-      setStatusData(status || [])
-    } catch {
+      // Fetch users with pagination
+      const usersResponse = await userRepo.getAllUsers(page, limit)
+      
+      // Fetch status data with same pagination
+      const statusResponse = await attendanceRepo.getAllUserStatus(page, limit)
+      
+      // Extract data from paginated response
+      setUsers(usersResponse.data || [])
+      setStatusData(statusResponse.data || [])
+      setTotalPages(usersResponse.pagination?.totalPages || 1)
+      setTotalUsers(usersResponse.pagination?.total || 0)
+      setCurrentPage(usersResponse.pagination?.currentPage || page)
+    } catch (error) {
       message.error("Failed to fetch users or attendance")
-      console.log(errors);
+      console.error("Fetch error:", error)
     } finally {
       setLoading(false)
     }
@@ -147,7 +162,7 @@ const Students: React.FC = () => {
       }
       setIsModalOpen(false)
       resetForm()
-      fetchUsers()
+      fetchUsers(currentPage)
     } catch (error: any) {
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors)
@@ -166,8 +181,14 @@ const Students: React.FC = () => {
       onOk: async () => {
         try {
           await userRepo.deleteUser(id)
-          setUsers((prev) => prev.filter((user) => user._id !== id))
           message.success("User deleted successfully")
+          
+          // If current page becomes empty after deletion, go to previous page
+          if (users.length === 1 && currentPage > 1) {
+            fetchUsers(currentPage - 1)
+          } else {
+            fetchUsers(currentPage)
+          }
         } catch {
           message.error("Failed to delete user")
         }
@@ -192,17 +213,39 @@ const Students: React.FC = () => {
     setIsModalOpen(true)
   }
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    fetchUsers(page)
+  }
+
   useEffect(() => {
-    fetchUsers()
-    fetchEnums()
+    let isMounted = true
+    
+    const initializeData = async () => {
+      if (isMounted) {
+        await fetchUsers(1)
+        await fetchEnums()
+      }
+    }
+    
+    initializeData()
+    
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   return (
     <div className="min-h-screen w-full p-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-          Manage Students
-        </h2>
+        <div>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+            Manage Students
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Total: {totalUsers} students
+          </p>
+        </div>
         <Button
           className="flex items-center gap-2 bg-black hover:bg-gray-700 text-white"
           onClick={() => setIsModalOpen(true)}
@@ -215,93 +258,112 @@ const Students: React.FC = () => {
         {loading ? (
           <Loader />
         ) : (
-          <Table>
-            <TableHeader className="bg-neutral-100 dark:bg-neutral-800">
-              <TableRow>
-                <TableHead>#</TableHead>
-                <TableHead>BQ Id</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>CNIC</TableHead>
-                <TableHead>Course</TableHead>
-                <TableHead>Gender</TableHead>
-                <TableHead>Shift</TableHead>
-                <TableHead>Today Attendance</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.length > 0 ? (
-                users.map((user, index) => {
-                  const status = statusData.find((s) => s._id === user._id)?.status
-                  return (
-                    <TableRow key={user._id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell>{user.bq_id}</TableCell>
-                      <TableCell>{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.phone}</TableCell>
-                      <TableCell>{user.CNIC}</TableCell>
-                      <TableCell>{user.course}</TableCell>
-                      <TableCell>{user.gender}</TableCell>
-                      <TableCell>{user.shift}</TableCell>
-                      <TableCell>
-                        <span
-                          className={`px-2 py-1 rounded-full flex flex-row items-center justify-center text-sm font-semibold ${status === "Present"
-                              ? "bg-green-100 text-green-600"
-                              : status === "Absent"
+          <>
+            <Table>
+              <TableHeader className="bg-neutral-100 dark:bg-neutral-800">
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>BQ Id</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>CNIC</TableHead>
+                  <TableHead>Course</TableHead>
+                  <TableHead>Gender</TableHead>
+                  <TableHead>Shift</TableHead>
+                  <TableHead>Today Attendance</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.length > 0 ? (
+                  users.map((user, index) => {
+                    // Match status by comparing _id as strings
+                    const status = statusData.find((s) => s._id.toString() === user._id.toString())?.status
+                    // Calculate global index based on current page
+                    const globalIndex = (currentPage - 1) * limit + index + 1
+                    
+                    return (
+                      <TableRow key={`${user._id}-${index}`}>
+                        <TableCell>{globalIndex}</TableCell>
+                        <TableCell>{user.bq_id}</TableCell>
+                        <TableCell>{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{user.phone}</TableCell>
+                        <TableCell>{user.CNIC}</TableCell>
+                        <TableCell>{user.course}</TableCell>
+                        <TableCell>{user.gender}</TableCell>
+                        <TableCell>{user.shift}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`px-2 py-1 rounded-full flex flex-row items-center justify-center text-sm font-semibold ${
+                              status === "Present"
+                                ? "bg-green-100 text-green-600"
+                                : status === "Absent"
                                 ? "bg-red-100 text-red-600"
+                                : status === "Late"
+                                ? "bg-orange-100 text-orange-600"
                                 : "bg-yellow-100 text-yellow-600"
                             }`}
-                        >
-                          {status || "N/A"}
-                        </span>
-                      </TableCell>
+                          >
+                            {status || "N/A"}
+                          </span>
+                        </TableCell>
 
+                        <TableCell className="flex gap-2 justify-end">
+                          <Button
+                            variant="default"
+                            size="icon"
+                            className="cursor-pointer rounded-full bg-green-600 hover:bg-green-700"
+                            onClick={() => handleWhatsAppContact(user.phone, user.name)}
+                          >
+                            <FaWhatsapp className="text-white" />
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="icon"
+                            className="cursor-pointer rounded-full"
+                            onClick={() => openEditModal(user)}
+                          >
+                            <MdEditSquare className="text-white" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="cursor-pointer rounded-full"
+                            onClick={() => handleDelete(user._id)}
+                          >
+                            <MdDeleteSweep className="text-white" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
+                      No users found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
 
-                      <TableCell className="flex gap-2 justify-end">
-                        <Button
-                          variant="default"
-                          size="icon"
-                          className="cursor-pointer rounded-full bg-green-600 hover:bg-green-700"
-                          onClick={() => handleWhatsAppContact(user.phone, user.name)}
-                        >
-                          <FaWhatsapp className="text-white" />
-                        </Button>
-                        <Button
-                          variant="default"
-                          size="icon"
-                          className="cursor-pointer rounded-full"
-                          onClick={() => openEditModal(user)}
-                        >
-                          <MdEditSquare className="text-white" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="cursor-pointer rounded-full"
-                          onClick={() => handleDelete(user._id)}
-                        >
-                          <MdDeleteSweep className="text-white" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={12} className="text-center py-8 text-gray-500">
-                    No users found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+            {/* Pagination Component */}
+            {totalPages > 1 && (
+              <div className="p-4 border-t">
+                <SimplePagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* ✅ Add/Edit Modal */}
+      {/* Add/Edit Modal */}
       <Modal
         title={
           <span className="text-xl font-semibold">

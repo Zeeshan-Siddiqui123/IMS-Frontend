@@ -2,11 +2,10 @@ import api from "../lib/axios"
 
 export class UserRepo {
   // Fetch all users
-  async getAllUsers() {
-    const response = await api.get("/api/user/signup")
-    return response.data
+  async getAllUsers(page = 1, limit = 10) {
+    const response = await api.get(`/api/user/signup?page=${page}&limit=${limit}`);
+    return response.data;
   }
-
   // Add a new user
   async addUser(userData: any) {
     const response = await api.post("/api/user/signup", userData)
@@ -30,7 +29,7 @@ export class UserRepo {
     return response.data
   }
 
-    async getEnums(){
+  async getEnums() {
     const response = await api.get("/api/user/enums")
     return response.data
   }

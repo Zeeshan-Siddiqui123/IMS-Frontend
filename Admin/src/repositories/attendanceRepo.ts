@@ -3,14 +3,14 @@ import api from "../lib/axios"
 
 export class AttendanceRepo {
   // ✅ Get today's status of all users
-  async getAllUserStatus() {
-    const res = await api.get("/api/attendance/status")
+  async getAllUserStatus(page = 1, limit = 10) {
+    const res = await api.get(`/api/attendance/status?page=${page}&limit=${limit}`)
     return res.data
   }
 
   // ✅ Get full attendance history (all users)
-  async getAttendanceHistory() {
-    const res = await api.get("/api/attendance/history")
+  async getAttendanceHistory(page = 1, limit = 10) {
+    const res = await api.get(`/api/attendance/history?page=${page}&limit=${limit}`)
     return res.data
   }
 
