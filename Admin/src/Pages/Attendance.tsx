@@ -3,6 +3,7 @@ import { attendanceRepo } from "@/repositories/attendanceRepo"
 import { Button } from "@/components/ui/button"
 import { Input, Select, Table, message } from "antd"
 import Loader from "@/components/Loader"
+import SimplePagination from "@/components/simple-pagination"
 
 
 const { Option } = Select
@@ -14,22 +15,39 @@ const Attendance = () => {
   const [loading, setLoading] = useState(false)
   const [dateFilter, setDateFilter] = useState("today")
 
-  // 📥 Fetch All History on Mount
-  const fetchAllHistory = async () => {
-    try {
-      setLoading(true)
-      const data = await attendanceRepo.getAttendanceHistory()
-      setAllHistory(data || [])
-      filterByDate("today", data || []) 
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalHistory, setTotalHistory] = useState(0)
+  const [limit] = useState(10)
 
-      console.log(data);
-      
-    } catch (error) {
-      console.error("Error fetching all history:", error)
-      message.error("Failed to fetch history")
-    } finally {
-      setLoading(false) 
+
+  const fetchAllHistory = async (page = 1) => {
+      setLoading(true)
+      try {
+        
+        const usersResponse = await attendanceRepo.getAttendanceHistory(page, limit)
+        
+        const data = usersResponse.data || [];
+        
+        // Extract data from paginated response
+        setAllHistory(data)
+        filterByDate(dateFilter, data)
+        setTotalPages(usersResponse.pagination?.totalPages || 1)
+        setTotalHistory(usersResponse.pagination?.total || 0)
+        setCurrentPage(page)
+        console.log(totalHistory);
+        
+      } catch (error) {
+        message.error("Error fetching all history")
+        console.error("Fetch error:", error)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    fetchAllHistory(page)
   }
 
   useEffect(() => {
@@ -196,6 +214,7 @@ const Attendance = () => {
           Search
         </Button>
       </div>
+      
 
       {/* 📊 Ant Design Table */}
       <Table
@@ -205,7 +224,17 @@ const Attendance = () => {
         locale={{ emptyText: "No attendance records found." }}
         className="mt-4"
         bordered
+        
       />
+      {totalPages > 1 && (
+                      <div className="p-4 border-t">
+                        <SimplePagination
+                          currentPage={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={handlePageChange}
+                        />
+                      </div>
+                    )}
     </div>
   )
 }
