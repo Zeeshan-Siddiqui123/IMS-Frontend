@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/hooks/store/authStore";
+import CommentsSection from "./CommentsSection";
 
 interface PostCardProps {
   postId?: string;
@@ -62,6 +63,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const [showMenu, setShowMenu] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [showComments, setShowComments] = useState(false);
 
   const [editForm, setEditForm] = useState({
     title,
@@ -99,8 +101,8 @@ const PostCard: React.FC<PostCardProps> = ({
   const circleContent = isAdmin
     ? "A"
     : authorName
-    ? authorName[0].toUpperCase()
-    : "?";
+      ? authorName[0].toUpperCase()
+      : "?";
 
   const displayName = isAdmin ? "Admin" : authorName || "User";
 
@@ -201,13 +203,23 @@ const PostCard: React.FC<PostCardProps> = ({
           <button className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-neutral-800 px-5 py-2 rounded-md">
             <FaThumbsUp /> Like
           </button>
-          <button className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-neutral-800 px-5 py-2 rounded-md">
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-neutral-800 px-5 py-2 rounded-md"
+          >
             <FaRegCommentDots /> Comment
           </button>
+         
+
           <button className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-neutral-800 px-5 py-2 rounded-md">
             <FaShare /> Share
           </button>
         </div>
+         {showComments && postId && (
+            <div className="px-4 pb-4">
+              <CommentsSection postId={postId} />
+            </div>
+          )}
       </div>
 
       {/* EDIT MODAL */}
