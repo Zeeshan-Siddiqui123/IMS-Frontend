@@ -108,27 +108,4 @@ export default function SimplePagination({
       </PaginationContent>
     </Pagination>
   )
-}
-
-// Example usage in a parent component:
-/*
-import { useState } from 'react'
-import SimplePagination from './SimplePagination'
-
-function AttendanceHistory() {
-  const [currentPage, setCurrentPage] = useState(1)
-  const totalPages = 50 // From your API response
-
-  return (
-    <div>
-      {/* Your data display here *\/}
-      
-      <SimplePagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
-    </div>
-  )
-}
-*/  
+} 
