@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,44 +8,60 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  MessageSquare,
+  Heart,
+  Share2,
+  MoreVertical,
+  Edit,
+  Trash2,
+  ExternalLink,
+  Plus,
+  Clock,
+  User,
+  Send,
+  Loader2,
+} from "lucide-react";
 import { message } from "antd";
 import { postRepo } from "../repositories/postRepo";
+import { commentRepo } from "@/repositories/commentRepo";
 import UrlBreadcrumb from "@/components/UrlBreadcrumb";
-import PostCard from "../components/PostCard";
 import PaginatedList from "../components/PaginatedList";
-
-interface Post {
-  _id: string;
-  title: string;
-  description: string;
-  link: string;
-  createdAt: string;
-  user?: {
-    _id: string;
-    name: string;
-  };
-}
+import { useAuthStore } from "@/hooks/store/authStore";
+import { PostCard } from "@/components/PostCard";
 
 const Posts = () => {
-  const [activeTab, setActiveTab] = useState<"admin" | "user">("admin");
+  const [activeTab, setActiveTab] = useState("admin");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [formData, setFormData] = useState({ title: "", description: "", link: "" });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    link: "",
+  });
+  const [errors, setErrors] = useState({});
 
   const resetForm = () => {
     setFormData({ title: "", description: "", link: "" });
     setErrors({});
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -61,7 +78,7 @@ const Posts = () => {
       message.success("Post created successfully");
       setIsModalOpen(false);
       resetForm();
-    } catch (error: any) {
+    } catch (error) {
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else {
@@ -72,174 +89,217 @@ const Posts = () => {
     }
   };
 
-  const handleDelete = async (postId: string) => {
+  const handleDelete = async (postId) => {
     try {
       await postRepo.deleteUserPost(postId);
       message.success("Post deleted successfully");
-    } catch (error: any) {
+    } catch (error) {
       message.error(error.response?.data?.message || "Failed to delete post");
     }
   };
 
-  const handleEdit = async (postId: string, updatedData: Partial<Post>) => {
+  const handleEdit = async (postId, updatedData) => {
     try {
       await postRepo.updateUserPost(postId, updatedData);
       message.success("Post updated successfully");
-    } catch (error: any) {
+    } catch (error) {
       message.error(error.response?.data?.message || "Failed to update post");
     }
   };
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="p-6 space-y-6">
+
       <UrlBreadcrumb />
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Community Posts
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Share updates and engage with the community
+          </p>
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-2 h-11">
+              <TabsTrigger value="admin" className="gap-2">
+                <Badge variant="outline" className="h-5 w-5 rounded-full p-0 border-current">A</Badge>
+                Admin Announcements
+              </TabsTrigger>
+              <TabsTrigger value="user" className="gap-2">
+                <User className="w-4 h-4" />
+                User Posts
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as "admin" | "user")}
-        >
-          <TabsList className="flex w-full sm:w-auto">
-            <TabsTrigger value="admin">Admin Announcements</TabsTrigger>
-            <TabsTrigger value="user">User Posts</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <Button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto">
+        <Button onClick={() => setIsModalOpen(true)} size="lg" className="gap-2 shadow-md">
+          <Plus className="w-5 h-5" />
           Create Post
         </Button>
       </div>
-
-      {activeTab === "admin" && (
-        <PaginatedList<Post>
-          key="admin-posts"
-          fetchData={async (page, limit) => {
-            const res = await postRepo.getAllPosts(page, limit);
-            // Map backend response to expected format
-            return {
-              items: res.posts || res.data || [], // Handle both formats
-              pagination: {
-                currentPage: res.pagination.currentPage,
-                totalPages: res.pagination.totalPages,
-                totalPosts: res.pagination.total,
-                hasMore: res.pagination.hasMore,
-                postsPerPage: res.pagination.limit
-              }
-            };
-          }}
-          renderItem={(post) => (
-            <PostCard
-              title={post.title}
-              description={post.description}
-              link={post.link}
-              createdAt={post.createdAt}
-              isAdmin
-            />
-          )}
-          pageSize={10}
-        />
-      )}
-
-      {activeTab === "user" && (
-        <PaginatedList<Post>
-          key="user-posts"
-          fetchData={async (page, limit) => {
-            const res = await postRepo.getAllUsersPosts(page, limit);
-            // Map backend response to expected format
-            return {
-              items: res.posts || res.data || [], // Handle both formats
-              pagination: {
-                currentPage: res.pagination.currentPage,
-                totalPages: res.pagination.totalPages,
-                totalPosts: res.pagination.total,
-                hasMore: res.pagination.hasMore,
-                postsPerPage: res.pagination.limit
-              }
-            };
-          }}
-          renderItem={(post) => (
-            <PostCard
-              postId={post._id}
-              title={post.title}
-              description={post.description}
-              link={post.link}
-              createdAt={post.createdAt}
-              authorName={post.user?.name}
-              authorId={post.user?._id}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-            />
-          )}
-          pageSize={10}
-        />
-      )}
-
-      {/* CREATE POST MODAL */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-[95%] sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Create Post</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Input
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                disabled={isCreating}
-                className={errors.title ? "border-red-500" : ""}
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* Posts List */}
+        {activeTab === "admin" && (
+          <PaginatedList
+            key="admin-posts"
+            fetchData={async (page, limit) => {
+              const res = await postRepo.getAllPosts(page, limit);
+              return {
+                items: res.posts || res.data || [],
+                pagination: {
+                  currentPage: res.pagination.currentPage,
+                  totalPages: res.pagination.totalPages,
+                  totalPosts: res.pagination.total,
+                  hasMore: res.pagination.hasMore,
+                  postsPerPage: res.pagination.limit
+                }
+              };
+            }}
+            renderItem={(post) => (
+              <PostCard
+                postId={post._id}
+                title={post.title}
+                description={post.description}
+                link={post.link}
+                createdAt={post.createdAt}
+                isAdmin
               />
-              {errors.title && <p className="text-red-500 text-xs">{errors.title}</p>}
+            )}
+            pageSize={10}
+          />
+        )}
+
+        {activeTab === "user" && (
+          <PaginatedList
+            key="user-posts"
+            fetchData={async (page, limit) => {
+              const res = await postRepo.getAllUsersPosts(page, limit);
+              return {
+                items: res.posts || res.data || [],
+                pagination: {
+                  currentPage: res.pagination.currentPage,
+                  totalPages: res.pagination.totalPages,
+                  totalPosts: res.pagination.total,
+                  hasMore: res.pagination.hasMore,
+                  postsPerPage: res.pagination.limit
+                }
+              };
+            }}
+            renderItem={(post) => (
+              <PostCard
+                postId={post._id}
+                title={post.title}
+                description={post.description}
+                link={post.link}
+                createdAt={post.createdAt}
+                authorName={post.user?.name}
+                authorId={post.user?._id}
+                onDelete={handleDelete}
+                onEdit={handleEdit}
+              />
+            )}
+            pageSize={10}
+          />
+        )}
+
+        {/* Create Post Modal */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-[580px]">
+            <DialogHeader>
+              <DialogTitle className="text-xl">Create New Post</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-5 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-sm font-medium">
+                  Title <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  disabled={isCreating}
+                  placeholder="Enter an engaging title..."
+                  className={errors.title ? "border-destructive" : ""}
+                />
+                {errors.title && (
+                  <p className="text-xs text-destructive">{errors.title}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-medium">
+                  Description <span className="text-destructive">*</span>
+                </Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  rows={5}
+                  value={formData.description}
+                  onChange={handleChange}
+                  disabled={isCreating}
+                  placeholder="Share your thoughts, ideas, or updates..."
+                  className={`resize-none ${errors.description ? "border-destructive" : ""}`}
+                />
+                {errors.description && (
+                  <p className="text-xs text-destructive">{errors.description}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="link" className="text-sm font-medium">
+                  Link <span className="text-muted-foreground">(Optional)</span>
+                </Label>
+                <Input
+                  id="link"
+                  name="link"
+                  value={formData.link}
+                  onChange={handleChange}
+                  disabled={isCreating}
+                  placeholder="https://example.com"
+                  className={errors.link ? "border-destructive" : ""}
+                />
+                {errors.link && (
+                  <p className="text-xs text-destructive">{errors.link}</p>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                name="description"
-                rows={4}
-                value={formData.description}
-                onChange={handleChange}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  resetForm();
+                }}
                 disabled={isCreating}
-                className={errors.description ? "border-red-500" : ""}
-              />
-              {errors.description && (
-                <p className="text-red-500 text-xs">{errors.description}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Link</Label>
-              <Input
-                name="link"
-                value={formData.link}
-                onChange={handleChange}
-                disabled={isCreating}
-                className={errors.link ? "border-red-500" : ""}
-              />
-              {errors.link && <p className="text-red-500 text-xs">{errors.link}</p>}
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsModalOpen(false);
-                resetForm();
-              }}
-              disabled={isCreating}
-            >
-              Cancel
-            </Button>
-
-            <Button onClick={handleCreate} disabled={isCreating}>
-              {isCreating ? "Creating..." : "Create Post"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreate} disabled={isCreating} className="gap-2">
+                {isCreating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Create Post
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 };

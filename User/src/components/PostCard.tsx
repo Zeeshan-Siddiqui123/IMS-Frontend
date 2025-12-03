@@ -1,12 +1,24 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
-  FaThumbsUp,
-  FaRegCommentDots,
-  FaShare,
-  FaEllipsisV,
-  FaEdit,
-  FaTrash,
-} from "react-icons/fa";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+} from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,53 +29,34 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+import { Clock, Edit, ExternalLink, Heart, MessageSquare, MoreVertical, Share2, Trash2 } from "lucide-react";
+import { CommentsSection } from "./CommentsSection";
 import { useAuthStore } from "@/hooks/store/authStore";
-import CommentsSection from "./CommentsSection";
-
-interface PostCardProps {
-  postId?: string;
-  title: string;
-  description: string;
-  link?: string;
-  createdAt: string;
-  authorName?: string;
-  authorId?: string; // owner ID
-  isAdmin?: boolean;
-
-  onDelete?: (postId: string) => void;
-  onEdit?: (
-    postId: string,
-    data: { title: string; description: string; link: string }
-  ) => void;
-}
-
-const PostCard: React.FC<PostCardProps> = ({
+export const PostCard = ({
   postId,
   title,
   description,
   link,
   createdAt,
   authorName,
-  authorId = "", // FIX: default empty string → avoids undefined error
+  authorId = "",
   isAdmin = false,
   onDelete,
   onEdit,
 }) => {
-  const [showMenu, setShowMenu] = useState(false);
+  const { user, isAuthenticated } = useAuthStore();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
 
   const [editForm, setEditForm] = useState({
     title,
@@ -71,40 +64,17 @@ const PostCard: React.FC<PostCardProps> = ({
     link: link || "",
   });
 
-  const { user, isAuthenticated } = useAuthStore();
-
-  // FIX: ensure user exists before comparison
   const isOwner = isAuthenticated && user?._id && user?._id === authorId;
-
-  // time ago
-  const formatTimeAgo = (dateString: string) => {
-    const seconds = Math.floor(
-      (new Date().getTime() - new Date(dateString).getTime()) / 1000
-    );
-    const intervals: any = {
-      year: 31536000,
-      month: 2592000,
-      week: 604800,
-      day: 86400,
-      hour: 3600,
-      minute: 60,
-    };
-
-    for (let key in intervals) {
-      const diff = Math.floor(seconds / intervals[key]);
-      if (diff >= 1) return `${diff} ${key}${diff > 1 ? "s" : ""} ago`;
-    }
-
-    return "Just now";
-  };
-
-  const circleContent = isAdmin
-    ? "A"
-    : authorName
-      ? authorName[0].toUpperCase()
-      : "?";
-
   const displayName = isAdmin ? "Admin" : authorName || "User";
+  const avatarText = displayName.charAt(0).toUpperCase();
+
+  const formatTimeAgo = (dateString) => {
+    const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+    if (seconds < 60) return "Just now";
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+  };
 
   const handleDelete = () => {
     if (postId && onDelete) onDelete(postId);
@@ -118,121 +88,154 @@ const PostCard: React.FC<PostCardProps> = ({
     }
   };
 
+  const handleLike = () => {
+    setLiked(!liked);
+    setLikeCount(liked ? likeCount - 1 : likeCount + 1);
+  };
+
   return (
     <>
-      <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-md w-full max-w-xl mx-auto border border-gray-200 dark:border-neutral-800 relative">
-
-        {/* HEADER */}
-        <div className="flex items-center gap-3 p-4 relative">
-          <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-neutral-700 flex items-center justify-center text-white font-semibold">
-            {circleContent}
-          </div>
-
-          <div className="flex-1">
-            <p className="font-semibold text-gray-900 dark:text-white">
-              {displayName}
-            </p>
-            <span className="text-xs text-gray-500">
-              {formatTimeAgo(createdAt)}
-            </span>
-          </div>
-
-          {/* Only Owner Can See Edit/Delete */}
-          {isOwner && postId && (
-            <div className="relative">
-              <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full"
+      <Card className="overflow-hidden border-border ">
+        <CardHeader className="space-y-0">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar
+                className={`h-11 w-11 border-2 ${
+                  isAdmin
+                    ? "border-blue-200 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600"
+                    : "border-emerald-200 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600"
+                }`}
               >
-                <FaEllipsisV className="text-gray-600 dark:text-gray-300" />
-              </button>
+                <AvatarFallback className="text-white font-bold text-sm">
+                  {avatarText}
+                </AvatarFallback>
+              </Avatar>
 
-              {showMenu && (
-                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-700 z-20">
-                  <button
-                    onClick={() => {
-                      setIsEditModalOpen(true);
-                      setShowMenu(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-neutral-700 text-left"
-                  >
-                    <FaEdit /> Edit
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setIsDeleteDialogOpen(true);
-                      setShowMenu(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 text-left"
-                  >
-                    <FaTrash /> Delete
-                  </button>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-sm leading-none">{displayName}</p>
+                  {isAdmin && (
+                    <Badge variant="secondary" className="text-xs px-2 py-0.5 font-medium">
+                      Admin
+                    </Badge>
+                  )}
                 </div>
-              )}
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{formatTimeAgo(createdAt)}</span>
+                </div>
+              </div>
             </div>
+
+            {isOwner && postId && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Post
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Post
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {/* Post Content */}
+          <div className="space-y-2">
+            <h3 className="font-bold text-lg leading-tight">{title}</h3>
+            <p className="text-sm text-foreground/80 leading-relaxed">
+              {description}
+            </p>
+          </div>
+
+          {/* Link */}
+          {link && (
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium transition-colors group"
+            >
+              <ExternalLink className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              Visit Link
+            </a>
           )}
-        </div>
 
-        {/* TITLE */}
-        <p className="px-4 pb-1 font-semibold text-gray-900 dark:text-white">
-          {title}
-        </p>
+          <Separator />
 
-        {/* DESCRIPTION */}
-        <p className="px-4 pb-3 text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
-          {description}
-        </p>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 gap-2 hover:bg-red-50 dark:hover:bg-red-950/20"
+              onClick={handleLike}
+            >
+              <Heart
+                className={`w-4 h-4 transition-all ${
+                  liked ? "fill-red-500 text-red-500 scale-110" : ""
+                }`}
+              />
+              <span className="text-xs font-medium">
+                {likeCount > 0 ? likeCount : "Like"}
+              </span>
+            </Button>
 
-        {/* LINK */}
-        {link && (
-          <a
-            href={link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 text-blue-600 text-sm font-medium underline"
-          >
-            Visit Link
-          </a>
-        )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 gap-2 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+              onClick={() => setShowComments(!showComments)}
+            >
+              <MessageSquare className={`w-4 h-4 ${showComments ? "text-blue-600" : ""}`} />
+              <span className="text-xs font-medium">Comment</span>
+            </Button>
 
-        <div className="my-3 h-[1px] bg-gray-200 dark:bg-neutral-700" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 gap-2 hover:bg-green-50 dark:hover:bg-green-950/20"
+            >
+              <Share2 className="w-4 h-4" />
+              <span className="text-xs font-medium">Share</span>
+            </Button>
+          </div>
 
-        {/* ACTION BUTTONS */}
-        <div className="flex justify-around py-2 text-gray-600 dark:text-gray-300">
-          <button className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-neutral-800 px-5 py-2 rounded-md">
-            <FaThumbsUp /> Like
-          </button>
-          <button
-            onClick={() => setShowComments(!showComments)}
-            className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-neutral-800 px-5 py-2 rounded-md"
-          >
-            <FaRegCommentDots /> Comment
-          </button>
-         
-
-          <button className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-neutral-800 px-5 py-2 rounded-md">
-            <FaShare /> Share
-          </button>
-        </div>
-         {showComments && postId && (
-            <div className="px-4 pb-4">
+          {/* Comments Section */}
+          {showComments && postId && (
+            <>
+              <Separator />
               <CommentsSection postId={postId} />
-            </div>
+            </>
           )}
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* EDIT MODAL */}
+      {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="w-[95%] sm:max-w-[450px]">
+        <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle>Edit Post</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label>Title</Label>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Title</Label>
               <Input
+                id="edit-title"
                 value={editForm.title}
                 onChange={(e) =>
                   setEditForm({ ...editForm, title: e.target.value })
@@ -240,24 +243,28 @@ const PostCard: React.FC<PostCardProps> = ({
               />
             </div>
 
-            <div>
-              <Label>Description</Label>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Description</Label>
               <Textarea
+                id="edit-description"
                 rows={4}
                 value={editForm.description}
                 onChange={(e) =>
                   setEditForm({ ...editForm, description: e.target.value })
                 }
+                className="resize-none"
               />
             </div>
 
-            <div>
-              <Label>Link</Label>
+            <div className="space-y-2">
+              <Label htmlFor="edit-link">Link (Optional)</Label>
               <Input
+                id="edit-link"
                 value={editForm.link}
                 onChange={(e) =>
                   setEditForm({ ...editForm, link: e.target.value })
                 }
+                placeholder="https://..."
               />
             </div>
           </div>
@@ -266,28 +273,27 @@ const PostCard: React.FC<PostCardProps> = ({
             <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditSubmit}>Update</Button>
+            <Button onClick={handleEditSubmit}>Update Post</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* DELETE CONFIRMATION */}
+      {/* Delete Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Post</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone.
+              Are you sure you want to delete this post? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              Delete Post
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -295,5 +301,3 @@ const PostCard: React.FC<PostCardProps> = ({
     </>
   );
 };
-
-export default PostCard;
