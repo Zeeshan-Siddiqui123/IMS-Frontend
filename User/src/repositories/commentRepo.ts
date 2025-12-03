@@ -1,38 +1,18 @@
 // repositories/commentRepo.ts
 import api from "../lib/axios";
-
-export interface Comment {
-  _id: string;
-  content: string;
-  post: string;
-  user: {
-    _id: string;
-    name: string;
-  };
-  createdAt: string;
-  updatedAt?: string;
-}
-
-export interface CommentResponse {
-  docs: Comment[];
-  totalDocs: number;
-  limit: number;
-  page: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-}
+import { Comment, CommentResponse } from "@/types/comment";
 
 export class CommentRepo {
-  async createComment(postId: string, content: string) {
+  async createComment(postId: string, content: string, parentCommentId?: string | null) {
     const response = await api.post("/api/comments/createcomment", {
       postId,
-      content
+      content,
+      parentCommentId: parentCommentId || null
     });
     return response.data;
   }
 
-  async getCommentsByPost(postId: string, page: number = 1, limit: number = 10) {
+  async getCommentsByPost(postId: string, page: number = 1, limit: number = 10): Promise<CommentResponse> {
     const response = await api.get<CommentResponse>(
       `/api/comments/post/${postId}/comments`,
       {

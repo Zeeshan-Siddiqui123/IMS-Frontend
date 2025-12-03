@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,40 +8,24 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  MessageSquare,
-  Heart,
-  Share2,
-  MoreVertical,
-  Edit,
-  Trash2,
-  ExternalLink,
   Plus,
-  Clock,
   User,
   Send,
   Loader2,
 } from "lucide-react";
 import { message } from "antd";
 import { postRepo } from "../repositories/postRepo";
-import { commentRepo } from "@/repositories/commentRepo";
 import UrlBreadcrumb from "@/components/UrlBreadcrumb";
-import PaginatedList from "../components/PaginatedList";
+import PaginatedList, { PaginatedListRef } from "../components/PaginatedList";
 import { useAuthStore } from "@/hooks/store/authStore";
 import { PostCard } from "@/components/PostCard";
+import { useSocket } from "@/hooks/useSocket";
 
 const Posts = () => {
   const [activeTab, setActiveTab] = useState("admin");
@@ -52,18 +36,49 @@ const Posts = () => {
     description: "",
     link: "",
   });
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<any>({});
+
+  const listRef = useRef<PaginatedListRef<any>>(null);
+  const { on, isConnected } = useSocket();
+
+  // Socket event listeners
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const unsubscribeCreated = on("post:created", (payload: any) => {
+      console.log("New post created:", payload.post);
+      if (activeTab === "user") {
+        listRef.current?.addItem(payload.post);
+      }
+    });
+
+    const unsubscribeUpdated = on("post:updated", (payload: any) => {
+      console.log("Post updated:", payload.post);
+      listRef.current?.updateItem(payload.post._id, payload.post);
+    });
+
+    const unsubscribeDeleted = on("post:deleted", (payload: any) => {
+      console.log("Post deleted:", payload.postId);
+      listRef.current?.removeItem(payload.postId);
+    });
+
+    return () => {
+      unsubscribeCreated?.();
+      unsubscribeUpdated?.();
+      unsubscribeDeleted?.();
+    };
+  }, [isConnected, on, activeTab]);
 
   const resetForm = () => {
     setFormData({ title: "", description: "", link: "" });
     setErrors({});
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
-      setErrors((prev) => {
+      setErrors((prev: any) => {
         const newErrors = { ...prev };
         delete newErrors[name];
         return newErrors;
@@ -74,11 +89,11 @@ const Posts = () => {
   const handleCreate = async () => {
     try {
       setIsCreating(true);
-      const response = await postRepo.createUserPost(formData);
+      await postRepo.createUserPost(formData);
       message.success("Post created successfully");
       setIsModalOpen(false);
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else {
@@ -89,20 +104,20 @@ const Posts = () => {
     }
   };
 
-  const handleDelete = async (postId) => {
+  const handleDelete = async (postId: string) => {
     try {
       await postRepo.deleteUserPost(postId);
       message.success("Post deleted successfully");
-    } catch (error) {
+    } catch (error: any) {
       message.error(error.response?.data?.message || "Failed to delete post");
     }
   };
 
-  const handleEdit = async (postId, updatedData) => {
+  const handleEdit = async (postId: string, updatedData: any) => {
     try {
       await postRepo.updateUserPost(postId, updatedData);
       message.success("Post updated successfully");
-    } catch (error) {
+    } catch (error: any) {
       message.error(error.response?.data?.message || "Failed to update post");
     }
   };
@@ -161,7 +176,7 @@ const Posts = () => {
                 }
               };
             }}
-            renderItem={(post) => (
+            renderItem={(post: any) => (
               <PostCard
                 postId={post._id}
                 title={post.title}
@@ -177,6 +192,7 @@ const Posts = () => {
 
         {activeTab === "user" && (
           <PaginatedList
+            ref={listRef}
             key="user-posts"
             fetchData={async (page, limit) => {
               const res = await postRepo.getAllUsersPosts(page, limit);
@@ -191,7 +207,7 @@ const Posts = () => {
                 }
               };
             }}
-            renderItem={(post) => (
+            renderItem={(post: any) => (
               <PostCard
                 postId={post._id}
                 title={post.title}

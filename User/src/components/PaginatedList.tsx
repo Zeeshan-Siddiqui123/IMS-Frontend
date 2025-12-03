@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+
+import React, { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import Loader from "@/components/Loader";
 
 interface Pagination {
@@ -16,7 +17,17 @@ interface PaginatedListProps<T> {
   key?: string; // Add key prop to force reset when switching tabs
 }
 
-function PaginatedList<T>({ fetchData, renderItem, pageSize = 10 }: PaginatedListProps<T>) {
+export interface PaginatedListRef<T> {
+  addItem: (item: T) => void;
+  updateItem: (id: string, item: Partial<T>) => void;
+  removeItem: (id: string) => void;
+  refresh: () => void;
+}
+
+const PaginatedList = forwardRef(<T extends { _id?: string }>(
+  { fetchData, renderItem, pageSize = 10 }: PaginatedListProps<T>,
+  ref: React.Ref<PaginatedListRef<T>>
+) => {
   const [items, setItems] = useState<T[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -52,6 +63,24 @@ function PaginatedList<T>({ fetchData, renderItem, pageSize = 10 }: PaginatedLis
       setLoadingMore(false);
     }
   }, [fetchData, pageSize]);
+
+  useImperativeHandle(ref, () => ({
+    addItem: (item: T) => {
+      setItems((prev) => [item, ...prev]);
+    },
+    updateItem: (id: string, updatedItem: Partial<T>) => {
+      setItems((prev) =>
+        prev.map((item) => (item._id === id ? { ...item, ...updatedItem } : item))
+      );
+    },
+    removeItem: (id: string) => {
+      setItems((prev) => prev.filter((item) => item._id !== id));
+    },
+    refresh: () => {
+      setPage(1);
+      loadPage(1, false);
+    },
+  }));
 
   const lastItemRef = useCallback(
     (node: HTMLDivElement) => {
@@ -98,7 +127,7 @@ function PaginatedList<T>({ fetchData, renderItem, pageSize = 10 }: PaginatedLis
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
         return (
-          <div key={(item as any)?._id || index} ref={isLast ? lastItemRef : null}>
+          <div key={item._id || index} ref={isLast ? lastItemRef : null}>
             {renderItem(item, index)}
           </div>
         );
@@ -118,6 +147,7 @@ function PaginatedList<T>({ fetchData, renderItem, pageSize = 10 }: PaginatedLis
       )}
     </div>
   );
-}
+});
 
-export default PaginatedList;
+// Explicitly cast the component to handle the generic type correctly in TSX
+export default PaginatedList as <T>(props: PaginatedListProps<T> & { ref?: React.Ref<PaginatedListRef<T>> }) => React.ReactElement;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +38,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Clock, Edit, ExternalLink, Heart, MessageSquare, MoreVertical, Share2, Trash2 } from "lucide-react";
 import { CommentsSection } from "./CommentsSection";
 import { useAuthStore } from "@/hooks/store/authStore";
+import { likeRepo } from "@/repositories/likeRepo";
+import { useSocket } from "@/hooks/useSocket";
+import { LikeAddedPayload, LikeRemovedPayload } from "@/types/like";
+
 export const PostCard = ({
   postId,
   title,
@@ -52,11 +55,14 @@ export const PostCard = ({
   onEdit,
 }) => {
   const { user, isAuthenticated } = useAuthStore();
+  const { isConnected, on } = useSocket(postId);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [isLiking, setIsLiking] = useState(false);
 
   const [editForm, setEditForm] = useState({
     title,
@@ -67,6 +73,25 @@ export const PostCard = ({
   const isOwner = isAuthenticated && user?._id && user?._id === authorId;
   const displayName = isAdmin ? "Admin" : authorName || "User";
   const avatarText = displayName.charAt(0).toUpperCase();
+
+  console.log("PostCard rendered with ID:", postId);
+
+  // Fetch initial like status
+  useEffect(() => {
+    const fetchLikes = async () => {
+      try {
+        const res = await likeRepo.getLikesByPost(postId, 1, 1);
+        setLikeCount(res.pagination.totalItems);
+        setLiked(res.userLiked);
+      } catch (error) {
+        console.error("Failed to fetch likes:", error);
+      }
+    };
+
+    if (postId) {
+      fetchLikes();
+    }
+  }, [isConnected, on, user?._id]);
 
   const formatTimeAgo = (dateString) => {
     const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
@@ -88,9 +113,26 @@ export const PostCard = ({
     }
   };
 
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1);
+  const handleLike = async () => {
+    if (!isAuthenticated) return; // Or show login modal
+    if (isLiking) return;
+
+    try {
+      setIsLiking(true);
+      // Optimistic update
+      const newLikedState = !liked;
+      setLiked(newLikedState);
+      setLikeCount(prev => newLikedState ? prev + 1 : Math.max(0, prev - 1));
+
+      await likeRepo.toggleLike(postId);
+    } catch (error) {
+      // Revert on error
+      setLiked(!liked);
+      setLikeCount(prev => !liked ? prev - 1 : prev + 1);
+      console.error("Failed to toggle like:", error);
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   return (
@@ -100,11 +142,10 @@ export const PostCard = ({
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <Avatar
-                className={`h-11 w-11 border-2 ${
-                  isAdmin
-                    ? "border-blue-200 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600"
-                    : "border-emerald-200 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600"
-                }`}
+                className={`h-11 w-11 border-2 ${isAdmin
+                  ? "border-blue-200 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600"
+                  : "border-emerald-200 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600"
+                  }`}
               >
                 <AvatarFallback className="text-white font-bold text-sm">
                   {avatarText}
@@ -174,43 +215,45 @@ export const PostCard = ({
             </a>
           )}
 
-         
+
           {/* Action Buttons */}
-          <div className=" ">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 gap-2 hover:bg-red-50 dark:hover:bg-red-950/20"
-              onClick={handleLike}
-            >
-              <Heart
-                className={`w-4 h-4 transition-all ${
-                  liked ? "fill-red-500 text-red-500 scale-110" : ""
-                }`}
-              />
-              <span className="text-xs font-medium">
-                {likeCount > 0 ? likeCount : "Like"}
-              </span>
-            </Button>
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex gap-2 w-full">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`flex-1 gap-2 hover:bg-red-50 dark:hover:bg-red-950/20 ${liked ? 'text-red-500' : ''}`}
+                onClick={handleLike}
+                disabled={isLiking}
+              >
+                <Heart
+                  className={`w-4 h-4 transition-all ${liked ? "fill-current scale-110" : ""
+                    }`}
+                />
+                <span className="text-xs font-medium">
+                  {likeCount > 0 ? likeCount : "Like"}
+                </span>
+              </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 gap-2 hover:bg-blue-50 dark:hover:bg-blue-950/20"
-              onClick={() => setShowComments(!showComments)}
-            >
-              <MessageSquare className={`w-4 h-4 ${showComments ? "text-blue-600" : ""}`} />
-              <span className="text-xs font-medium">Comments </span>
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1 gap-2 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                onClick={() => setShowComments(!showComments)}
+              >
+                <MessageSquare className={`w-4 h-4 ${showComments ? "text-blue-600" : ""}`} />
+                <span className="text-xs font-medium">Comments</span>
+              </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 gap-2 hover:bg-green-50 dark:hover:bg-green-950/20"
-            >
-              <Share2 className="w-4 h-4" />
-              <span className="text-xs font-medium">Share</span>
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1 gap-2 hover:bg-green-50 dark:hover:bg-green-950/20"
+              >
+                <Share2 className="w-4 h-4" />
+                <span className="text-xs font-medium">Share</span>
+              </Button>
+            </div>
           </div>
 
           {/* Comments Section */}
