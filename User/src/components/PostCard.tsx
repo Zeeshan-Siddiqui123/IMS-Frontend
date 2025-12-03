@@ -174,10 +174,9 @@ export const PostCard = ({
             </a>
           )}
 
-          <Separator />
-
+         
           {/* Action Buttons */}
-          <div className="flex items-center gap-1">
+          <div className=" ">
             <Button
               variant="ghost"
               size="sm"
@@ -201,7 +200,7 @@ export const PostCard = ({
               onClick={() => setShowComments(!showComments)}
             >
               <MessageSquare className={`w-4 h-4 ${showComments ? "text-blue-600" : ""}`} />
-              <span className="text-xs font-medium">Comment</span>
+              <span className="text-xs font-medium">Comments </span>
             </Button>
 
             <Button
