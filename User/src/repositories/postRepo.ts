@@ -35,10 +35,23 @@ export class PostRepo {
     return response.data;
   }
 
-  // Create user post
-  async createUserPost(postData: any) {
-    const response = await api.post("/api/user/createpost", postData, {
+  // Create user post with optional image
+  async createUserPost(postData: { title: string; description: string; link?: string; image?: File }) {
+    const formData = new FormData();
+    formData.append('title', postData.title);
+    formData.append('description', postData.description);
+    if (postData.link) {
+      formData.append('link', postData.link);
+    }
+    if (postData.image) {
+      formData.append('image', postData.image);
+    }
+
+    const response = await api.post("/api/user/createpost", formData, {
       withCredentials: true,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
     return response.data;
   }
@@ -51,13 +64,28 @@ export class PostRepo {
     return response.data;
   }
 
-  // Update user post
-  async updateUserPost(postId: string, postData: any) {
-    const response = await api.put("/api/user/updateuserpost", {
-      id: postId,
-      ...postData,
-    }, {
+  // Update user post with optional image
+  async updateUserPost(postId: string, postData: { title?: string; description?: string; link?: string; image?: File }) {
+    const formData = new FormData();
+    formData.append('id', postId);
+    if (postData.title) {
+      formData.append('title', postData.title);
+    }
+    if (postData.description) {
+      formData.append('description', postData.description);
+    }
+    if (postData.link !== undefined) {
+      formData.append('link', postData.link);
+    }
+    if (postData.image) {
+      formData.append('image', postData.image);
+    }
+
+    const response = await api.put("/api/user/updateuserpost", formData, {
       withCredentials: true,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
     return response.data;
   }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Table, Tag } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { attRepo, AttendanceStatus, HistoryRecord, AttendanceSettings } from "@/repositories/attRepo";
 import Loader from "@/components/Loader";
 import { useAuthStore } from "@/hooks/store/authStore";
@@ -15,6 +15,14 @@ const Attendance: React.FC = () => {
   const [shiftInfo, setShiftInfo] = useState<AttendanceSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+
+  // Pagination & Total Hours State
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0
+  });
+  const [totalHours, setTotalHours] = useState<number>(0);
 
   // Fetch today's status and shift info
   useEffect(() => {
@@ -39,22 +47,35 @@ const Attendance: React.FC = () => {
     fetchData();
   }, [user?._id]);
 
-  // Fetch history
-  useEffect(() => {
-    const fetchHistory = async () => {
-      if (!user?._id) return;
-      setIsHistoryLoading(true);
-      try {
-        const res = await attRepo.getUserHistory(user._id);
-        setHistory(res.history || []);
-      } catch (err) {
-        console.error("Error fetching history:", err);
-      } finally {
-        setIsHistoryLoading(false);
+  // Fetch history with pagination
+  const fetchHistory = async (page = 1, pageSize = 10) => {
+    if (!user?._id) return;
+    setIsHistoryLoading(true);
+    try {
+      const res = await attRepo.getUserHistory(user._id, page, pageSize);
+      setHistory(res.history || []);
+      setPagination({
+        current: res.pagination.currentPage,
+        pageSize: res.pagination.limit,
+        total: res.pagination.total
+      });
+      if (res.totalHours !== undefined) {
+        setTotalHours(res.totalHours);
       }
-    };
+    } catch (err) {
+      console.error("Error fetching history:", err);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchHistory();
   }, [user?._id]);
+
+  const handleTableChange = (newPagination: TablePaginationConfig) => {
+    fetchHistory(newPagination.current || 1, newPagination.pageSize || 10);
+  };
 
   const getStatusColor = (status: string) => {
     if (status === 'Present') return 'green';
@@ -239,10 +260,10 @@ const Attendance: React.FC = () => {
                   <Badge className="bg-red-500"><XCircle className="w-3 h-3 mr-1" />No Checkout</Badge>
                 )}
                 <Badge className={`${attendance?.status === 'Present' ? 'bg-green-500' :
-                    attendance?.status?.includes('Late') ? 'bg-yellow-500' :
-                      attendance?.status?.includes('Early') ? 'bg-orange-500' :
-                        attendance?.status?.includes('No Checkout') ? 'bg-red-500' :
-                          'bg-gray-500'
+                  attendance?.status?.includes('Late') ? 'bg-yellow-500' :
+                    attendance?.status?.includes('Early') ? 'bg-orange-500' :
+                      attendance?.status?.includes('No Checkout') ? 'bg-red-500' :
+                        'bg-gray-500'
                   }`}>
                   {attendance?.status}
                 </Badge>
@@ -293,7 +314,10 @@ const Attendance: React.FC = () => {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between">
             <span>History</span>
-            <Badge variant="outline">{history.length} records</Badge>
+            <div className="flex gap-2">
+              <Badge variant="secondary" className="text-sm">Total: {totalHours.toFixed(1)}h</Badge>
+              <Badge variant="outline" className="text-sm">{pagination.total} records</Badge>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -305,7 +329,13 @@ const Attendance: React.FC = () => {
             <Table
               columns={columns}
               dataSource={history.map(item => ({ ...item, key: item._id }))}
-              pagination={{ pageSize: 10, showSizeChanger: false }}
+              pagination={{
+                current: pagination.current,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
+                showSizeChanger: false
+              }}
+              onChange={handleTableChange}
               size="small"
               scroll={{ x: 600 }}
             />

@@ -58,8 +58,8 @@ export class AttRepo {
     return response.data
   }
 
-  async getUserHistory(userId: string): Promise<{ user: any; history: HistoryRecord[]; pagination: any }> {
-    const response = await api.get(`/api/attendance/history/${userId}`)
+  async getUserHistory(userId: string, page = 1, limit = 10): Promise<{ user: any; history: HistoryRecord[]; pagination: any; totalHours?: number }> {
+    const response = await api.get(`/api/attendance/history/${userId}?page=${page}&limit=${limit}`)
     return response.data
   }
 

@@ -18,6 +18,8 @@ import {
   User,
   Send,
   Loader2,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import { message } from "antd";
 import { postRepo } from "../repositories/postRepo";
@@ -44,10 +46,15 @@ const CreatePostDialog = memo(({
     description: "",
     link: "",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<any>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
     setFormData({ title: "", description: "", link: "" });
+    setImageFile(null);
+    setImagePreview(null);
     setErrors({});
   };
 
@@ -63,10 +70,43 @@ const CreatePostDialog = memo(({
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type (image or video)
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        message.error('Please select an image or video file');
+        return;
+      }
+      // Validate file size (50MB limit)
+      if (file.size > 50 * 1024 * 1024) {
+        message.error('File size must be less than 50MB');
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleCreate = async () => {
     try {
       setIsCreating(true);
-      await postRepo.createUserPost(formData);
+      await postRepo.createUserPost({
+        ...formData,
+        image: imageFile || undefined,
+      });
       message.success("Post created successfully");
       resetForm();
       onClose();
@@ -132,6 +172,63 @@ const CreatePostDialog = memo(({
             {errors.description && (
               <p className="text-xs text-destructive">{errors.description}</p>
             )}
+          </div>
+
+          {/* Image/Video Upload Section */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">
+              Media <span className="text-muted-foreground">(Optional)</span>
+            </Label>
+
+            {imagePreview ? (
+              <div className="relative rounded-lg overflow-hidden border">
+                {imageFile?.type.startsWith('video/') ? (
+                  <video
+                    src={imagePreview}
+                    className="w-full h-48 object-cover"
+                    controls
+                  />
+                ) : (
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-48 object-cover"
+                  />
+                )}
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8"
+                  onClick={removeImage}
+                  disabled={isCreating}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div
+                className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <ImagePlus className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Click to upload media
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Images or Videos up to 50MB
+                </p>
+              </div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              onChange={handleImageChange}
+              className="hidden"
+              disabled={isCreating}
+            />
           </div>
 
           <div className="space-y-2">
@@ -225,12 +322,7 @@ const Posts = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="space-y-1">
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Community Posts
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Share updates and engage with the community
-          </p>
+         
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
@@ -279,6 +371,7 @@ const Posts = () => {
                 title={post.title}
                 description={post.description}
                 link={post.link}
+                image={post.image}
                 createdAt={post.createdAt}
                 isAdmin
               />
@@ -311,9 +404,11 @@ const Posts = () => {
                 title={post.title}
                 description={post.description}
                 link={post.link}
+                image={post.image}
                 createdAt={post.createdAt}
                 authorName={post.user?.name}
                 authorId={post.user?._id}
+                authorAvatar={post.user?.avatar}
                 onDelete={handleDelete}
                 onEdit={handleEdit}
               />

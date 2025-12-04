@@ -11,6 +11,7 @@ interface User {
   CNIC: string
   course: string
   shift?: 'Morning' | 'Evening'
+  avatar?: string
 }
 
 interface AuthState {

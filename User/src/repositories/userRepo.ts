@@ -1,46 +1,45 @@
-import api from "../lib/axios"
+import api from "../lib/axios";
 
 export class UserRepo {
-  // Fetch all users
-  async getAllUsers() {
-    const response = await api.get("/api/user/signup")
-    return response.data
-  }
-
-  // Add a new user
-  async addUser(userData: any) {
-    const response = await api.post("/api/user/signup", userData)
-    return response.data
-  }
-
-  async loginUser(userData: any) {
-    const response = await api.post("/api/user/login", userData)
-    return response.data
-  }
-
-    async updateUser(id: string, userData: any) {
-    const response = await api.put(`/api/user/update/${id}`, userData)
-    return response.data
-  }
-
-  async logoutUser(){
-    const response = await api.post("/api/user/logout")
-    return response.data
-  }
-
   async profile() {
     const response = await api.get("/api/user/profile")
     return response.data
   }
 
-  async getEnums(){
-    const response = await api.get("/api/user/enums")
+  async updateUser(id: string, data: any) {
+    const response = await api.put(`/api/user/update/${id}`, data, {
+      withCredentials: true,
+    })
     return response.data
   }
- 
+
+  async updateAvatar(imageFile: File) {
+    const formData = new FormData();
+    formData.append('avatar', imageFile);
+
+    const response = await api.post("/api/user/avatar", formData, {
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
+  async logoutUser() {
+    const response = await api.post("/api/user/logout")
+    return response.data
+  }
+
+  async loginUser(data: any) {
+    const response = await api.post("/api/user/login", data)
+    return response.data
+  }
+
+  async signupUser(data: any) {
+    const response = await api.post("/api/user/signup", data)
+    return response.data
+  }
 }
 
-
-
-// Create a single instance to use everywhere
-export const userRepo = new UserRepo()
+export const userRepo = new UserRepo();

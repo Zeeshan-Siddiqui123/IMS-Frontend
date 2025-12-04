@@ -1,20 +1,22 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { message, Modal, Radio } from "antd"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { message, Modal } from "antd"
 import Loader from "@/components/Loader"
 import { userRepo } from "../repositories/userRepo"
-import { Edit3 as EditIcon, LogOut as LogoutIcon, Mail as MailIcon, Phone as PhoneIcon, FileText as FileTextIcon } from "lucide-react"
-import { Input, Select } from "antd"
-const { Option } = Select
+import { Edit3 as EditIcon, Camera, Loader2 } from "lucide-react"
+import { Input } from "antd"
+import { useAuthStore } from "@/hooks/store/authStore"
 
 export default function ProfileShadCN() {
+  const { user: authUser, setUser: setAuthUser } = useAuthStore()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [formData, setFormData] = useState<any>({
     name: "",
     bq_id: "",
@@ -25,8 +27,9 @@ export default function ProfileShadCN() {
     gender: "",
     shift: "",
   })
-  
+
   const [editingId, setEditingId] = useState<string | null>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -54,17 +57,13 @@ export default function ProfileShadCN() {
         setLoading(false)
       }
     }
-    
+
     fetchUser()
-    
+
   }, [])
 
   const handleChange = (e: any) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
-
-  const handleSelectChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value })
   }
 
   const handleSave = async () => {
@@ -78,6 +77,51 @@ export default function ProfileShadCN() {
     } catch (error: any) {
       console.error(error)
       message.error("Action failed")
+    }
+  }
+
+  const handleAvatarClick = () => {
+    avatarInputRef.current?.click()
+  }
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      message.error('Please select an image file')
+      return
+    }
+
+    // Validate file size (2MB limit for avatars)
+    if (file.size > 2 * 1024 * 1024) {
+      message.error('Image size must be less than 2MB')
+      return
+    }
+
+    try {
+      setIsUploadingAvatar(true)
+      const res = await userRepo.updateAvatar(file)
+
+      // Update local user state
+      setUser({ ...user, avatar: res.user.avatar })
+
+      // Update auth store so sidebar updates too
+      if (authUser) {
+        setAuthUser({ ...authUser, avatar: res.user.avatar } as any)
+      }
+
+      message.success("Avatar updated successfully")
+    } catch (error: any) {
+      console.error(error)
+      message.error(error.response?.data?.message || "Failed to update avatar")
+    } finally {
+      setIsUploadingAvatar(false)
+      // Reset file input
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = ''
+      }
     }
   }
 
@@ -100,13 +144,44 @@ export default function ProfileShadCN() {
         {/* Profile Header */}
         <div className="flex items-center justify-between space-x-4">
           <div className="flex items-center gap-4">
-            <div className="rounded-full flex items-center justify-center text-2xl font-bold">
-              <img
-              src={`https://ui-avatars.com/api/?name=${user?.name || "User"}`}
-              alt="User"
-              className="w-16 h-16 rounded-full border"
-            />
+            {/* Avatar with upload functionality */}
+            <div className="relative group">
+              <div
+                className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg cursor-pointer"
+                onClick={handleAvatarClick}
+              >
+                {isUploadingAvatar ? (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                    <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+                  </div>
+                ) : (
+                  <img
+                    src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || "User"}&background=6366f1&color=fff`}
+                    alt="User"
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
+
+              {/* Camera overlay */}
+              <div
+                className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                onClick={handleAvatarClick}
+              >
+                <Camera className="w-6 h-6 text-white" />
+              </div>
+
+              {/* Hidden file input */}
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+                disabled={isUploadingAvatar}
+              />
             </div>
+
             <div>
               <span className="text-3xl font-bold text-gray-900">{user?.name || "Student Name"}</span>
               <p className="text-gray-500">{user?.incubation_id || "N/A"}</p>
@@ -116,14 +191,14 @@ export default function ProfileShadCN() {
             <Button variant="default" onClick={() => setIsModalOpen(true)} className="flex items-center gap-2">
               <EditIcon className="w-4 h-4" /> Edit Profile
             </Button>
-           
+
           </div>
         </div>
 
         {/* Tabs for Details / Contact */}
         <Card className="p-6">
           <Tabs defaultValue="details" className="w-full">
-            
+
 
             <TabsContent value="details" className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {profileFields.map((field, idx) => (
@@ -133,30 +208,6 @@ export default function ProfileShadCN() {
                 </Card>
               ))}
             </TabsContent>
-
-            {/* <TabsContent value="contact" className="mt-6 space-y-4">
-              <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-md">
-                <MailIcon className="w-5 h-5 text-black-" />
-                <div>
-                  <p className="text-sm text-gray-400">Email</p>
-                  <p className="font-medium text-gray-900">{user?.email || "N/A"}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-md">
-                <PhoneIcon className="w-5 h-5 text-black-" />
-                <div>
-                  <p className="text-sm text-gray-400">Phone</p>
-                  <p className="font-medium text-gray-900">{user?.phone || "N/A"}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-md">
-                <FileTextIcon className="w-5 h-5 text-black-" />
-                <div>
-                  <p className="text-sm text-gray-400">CNIC</p>
-                  <p className="font-medium text-gray-900">{user?.CNIC || "N/A"}</p>
-                </div>
-              </div>
-            </TabsContent> */}
           </Tabs>
         </Card>
 
@@ -176,7 +227,7 @@ export default function ProfileShadCN() {
               </div>
             ))}
 
-            
+
 
             <Button className="w-full mt-4" onClick={handleSave}>
               Save Changes

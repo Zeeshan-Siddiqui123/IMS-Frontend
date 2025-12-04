@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,27 +33,46 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { Clock, Edit, ExternalLink, Heart, MessageSquare, MoreVertical, Trash2 } from "lucide-react";
+import { Clock, Edit, ExternalLink, Heart, ImagePlus, MessageSquare, MoreVertical, Trash2, X } from "lucide-react";
 import { CommentsSection } from "./CommentsSection";
 import { useAuthStore } from "@/hooks/store/authStore";
 import { likeRepo } from "@/repositories/likeRepo";
 import { commentRepo } from "@/repositories/commentRepo";
 import { useSocket } from "@/hooks/useSocket";
+import { message } from "antd";
+import { VideoPlayer } from "./VideoPlayer";
+
+interface PostCardProps {
+  postId: string;
+  title: string;
+  description: string;
+  link?: string;
+  image?: string;
+  createdAt: string;
+  authorName?: string;
+  authorId?: string;
+  authorAvatar?: string;
+  isAdmin?: boolean;
+  onDelete?: (postId: string) => void;
+  onEdit?: (postId: string, data: any) => void;
+}
 
 export const PostCard = ({
   postId,
   title,
   description,
   link,
+  image,
   createdAt,
   authorName,
   authorId = "",
+  authorAvatar,
   isAdmin = false,
   onDelete,
   onEdit,
-}) => {
+}: PostCardProps) => {
   const { user, isAuthenticated } = useAuthStore();
   const { isConnected, on } = useSocket(postId);
 
@@ -70,10 +89,17 @@ export const PostCard = ({
     description,
     link: link || "",
   });
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(image || null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
 
   const isOwner = isAuthenticated && user?._id && user?._id === authorId;
   const displayName = isAdmin ? "Admin" : authorName || "User";
   const avatarText = displayName.charAt(0).toUpperCase();
+
+  const isVideo = (url: string) => {
+    return url?.match(/\.(mp4|webm|mov|mkv)$/i);
+  };
 
   // Fetch initial like status and comment count
   useEffect(() => {
@@ -130,7 +156,7 @@ export const PostCard = ({
     };
   }, [isConnected, on, postId, user?._id]);
 
-  const formatTimeAgo = (dateString) => {
+  const formatTimeAgo = (dateString: string) => {
     const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
     if (seconds < 60) return "Just now";
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
@@ -143,9 +169,40 @@ export const PostCard = ({
     setIsDeleteDialogOpen(false);
   };
 
+  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        message.error('Please select an image or video file');
+        return;
+      }
+      if (file.size > 50 * 1024 * 1024) {
+        message.error('File size must be less than 50MB');
+        return;
+      }
+      setEditImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeEditImage = () => {
+    setEditImageFile(null);
+    setEditImagePreview(null);
+    if (editFileInputRef.current) {
+      editFileInputRef.current.value = '';
+    }
+  };
+
   const handleEditSubmit = () => {
     if (postId && onEdit) {
-      onEdit(postId, editForm);
+      onEdit(postId, {
+        ...editForm,
+        image: editImageFile || undefined,
+      });
       setIsEditModalOpen(false);
     }
   };
@@ -182,6 +239,9 @@ export const PostCard = ({
                   : "border-emerald-200 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600"
                   }`}
               >
+                {authorAvatar ? (
+                  <AvatarImage src={authorAvatar} alt={displayName} />
+                ) : null}
                 <AvatarFallback className="text-white font-bold text-sm">
                   {avatarText}
                 </AvatarFallback>
@@ -229,6 +289,25 @@ export const PostCard = ({
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {/* Post Media (Image or Video) */}
+          {image && (
+            <div className="rounded-lg overflow-hidden -mx-6 -mt-2 bg-black/5">
+              {isVideo(image) ? (
+                <VideoPlayer
+                  src={image}
+                  className="w-full h-auto max-h-[500px] mx-auto"
+                  playOnHover
+                />
+              ) : (
+                <img
+                  src={image}
+                  alt={title}
+                  className="w-full h-auto max-h-96 object-cover"
+                />
+              )}
+            </div>
+          )}
+
           {/* Post Content */}
           <div className="space-y-2">
             <h3 className="font-bold text-lg leading-tight">{title}</h3>
@@ -321,6 +400,54 @@ export const PostCard = ({
                   setEditForm({ ...editForm, description: e.target.value })
                 }
                 className="resize-none"
+              />
+            </div>
+
+            {/* Edit Media Section */}
+            <div className="space-y-2">
+              <Label>Media</Label>
+              {editImagePreview ? (
+                <div className="relative rounded-lg overflow-hidden border">
+                  {editImageFile?.type.startsWith('video/') || (typeof editImagePreview === 'string' && isVideo(editImagePreview)) ? (
+                    <video
+                      src={editImagePreview}
+                      controls
+                      className="w-full h-32 object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={editImagePreview}
+                      alt="Preview"
+                      className="w-full h-32 object-cover"
+                    />
+                  )}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-7 w-7"
+                    onClick={removeEditImage}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <div
+                  className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => editFileInputRef.current?.click()}
+                >
+                  <ImagePlus className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+                  <p className="text-xs text-muted-foreground">
+                    Click to upload media
+                  </p>
+                </div>
+              )}
+              <input
+                ref={editFileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                onChange={handleEditImageChange}
+                className="hidden"
               />
             </div>
 
