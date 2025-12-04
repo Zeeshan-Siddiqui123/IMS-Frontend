@@ -1,66 +1,76 @@
 // hooks/useSocket.ts
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import { socketService } from '@/lib/socket';
 
 export const useSocket = (postId?: string) => {
-    const [socket, setSocket] = useState<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
+    const hasJoinedRoom = useRef(false);
+    const listenersSetup = useRef(false);
 
     useEffect(() => {
-        // Initialize socket connection
+        // Initialize socket connection once
         const socketInstance = socketService.initialize();
-        setSocket(socketInstance);
 
         const handleConnect = () => {
             setIsConnected(true);
             // Auto-join post room if postId is provided
-            if (postId) {
+            if (postId && !hasJoinedRoom.current) {
                 socketService.joinPostRoom(postId);
+                hasJoinedRoom.current = true;
             }
         };
 
         const handleDisconnect = () => {
             setIsConnected(false);
+            hasJoinedRoom.current = false;
         };
 
-        socketInstance.on('connect', handleConnect);
-        socketInstance.on('disconnect', handleDisconnect);
+        // Only setup listeners once
+        if (!listenersSetup.current) {
+            socketInstance.on('connect', handleConnect);
+            socketInstance.on('disconnect', handleDisconnect);
+            listenersSetup.current = true;
+        }
 
         // Set initial connection state
         if (socketInstance.connected) {
             setIsConnected(true);
-            if (postId) {
+            if (postId && !hasJoinedRoom.current) {
                 socketService.joinPostRoom(postId);
+                hasJoinedRoom.current = true;
             }
         }
 
-        // Cleanup
+        // Cleanup only on unmount
         return () => {
-            socketInstance.off('connect', handleConnect);
-            socketInstance.off('disconnect', handleDisconnect);
-
-            if (postId) {
+            if (postId && hasJoinedRoom.current) {
                 socketService.leavePostRoom(postId);
+                hasJoinedRoom.current = false;
             }
         };
     }, [postId]);
 
-    // Subscribe to socket events
+    // Subscribe to socket events - stable callback
     const on = useCallback((event: string, callback: (...args: any[]) => void) => {
-        socket?.on(event, callback);
-        return () => {
-            socket?.off(event, callback);
-        };
-    }, [socket]);
+        const currentSocket = socketService.getSocket();
+        if (currentSocket) {
+            currentSocket.on(event, callback);
+            return () => {
+                currentSocket.off(event, callback);
+            };
+        }
+        return () => { };
+    }, []);
 
-    // Emit socket events
+    // Emit socket events - stable callback
     const emit = useCallback((event: string, ...args: any[]) => {
-        socket?.emit(event, ...args);
-    }, [socket]);
+        const currentSocket = socketService.getSocket();
+        currentSocket?.emit(event, ...args);
+    }, []);
 
     return {
-        socket,
+        socket: socketService.getSocket(),
         isConnected,
         on,
         emit,

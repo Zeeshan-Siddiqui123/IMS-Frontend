@@ -66,9 +66,11 @@ export const useComments = (postId: string) => {
         }
     }, [postId, setComments]);
 
-    // Socket listeners - only attach after initial fetch
+    // Socket listeners - attach when connected (removed hasFetchedRef condition)
     useEffect(() => {
-        if (!isConnected || !hasFetchedRef.current) return;
+        if (!isConnected) return;
+
+        console.log('Setting up socket listeners for post:', postId);
 
         const unsubCreated = on('comment:created', (payload: CommentCreatedPayload) => {
             console.log('Socket: comment:created', payload);
@@ -107,6 +109,7 @@ export const useComments = (postId: string) => {
         });
 
         return () => {
+            console.log('Cleaning up socket listeners for post:', postId);
             unsubCreated?.();
             unsubUpdated?.();
             unsubDeleted?.();

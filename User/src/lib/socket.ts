@@ -7,7 +7,8 @@ class SocketService {
     private isInitialized = false;
 
     initialize() {
-        if (this.isInitialized && this.socket?.connected) {
+        // Return existing socket if it exists (even if not yet connected)
+        if (this.socket) {
             return this.socket;
         }
 

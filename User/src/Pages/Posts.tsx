@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,13 +23,21 @@ import { message } from "antd";
 import { postRepo } from "../repositories/postRepo";
 import UrlBreadcrumb from "@/components/UrlBreadcrumb";
 import PaginatedList, { PaginatedListRef } from "../components/PaginatedList";
-import { useAuthStore } from "@/hooks/store/authStore";
 import { PostCard } from "@/components/PostCard";
-import { useSocket } from "@/hooks/useSocket";
 
-const Posts = () => {
-  const [activeTab, setActiveTab] = useState("admin");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+// Memoized PostCard to prevent re-renders when parent state changes
+const MemoizedPostCard = memo(PostCard);
+
+// Separate Create Post Dialog component to isolate form state
+const CreatePostDialog = memo(({
+  isOpen,
+  onClose,
+  onSuccess
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}) => {
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -37,37 +45,6 @@ const Posts = () => {
     link: "",
   });
   const [errors, setErrors] = useState<any>({});
-
-  const listRef = useRef<PaginatedListRef<any>>(null);
-  const { on, isConnected } = useSocket();
-
-  // Socket event listeners
-  useEffect(() => {
-    if (!isConnected) return;
-
-    const unsubscribeCreated = on("post:created", (payload: any) => {
-      console.log("New post created:", payload.post);
-      if (activeTab === "user") {
-        listRef.current?.addItem(payload.post);
-      }
-    });
-
-    const unsubscribeUpdated = on("post:updated", (payload: any) => {
-      console.log("Post updated:", payload.post);
-      listRef.current?.updateItem(payload.post._id, payload.post);
-    });
-
-    const unsubscribeDeleted = on("post:deleted", (payload: any) => {
-      console.log("Post deleted:", payload.postId);
-      listRef.current?.removeItem(payload.postId);
-    });
-
-    return () => {
-      unsubscribeCreated?.();
-      unsubscribeUpdated?.();
-      unsubscribeDeleted?.();
-    };
-  }, [isConnected, on, activeTab]);
 
   const resetForm = () => {
     setFormData({ title: "", description: "", link: "" });
@@ -91,8 +68,9 @@ const Posts = () => {
       setIsCreating(true);
       await postRepo.createUserPost(formData);
       message.success("Post created successfully");
-      setIsModalOpen(false);
       resetForm();
+      onClose();
+      onSuccess();
     } catch (error: any) {
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
@@ -104,23 +82,141 @@ const Posts = () => {
     }
   };
 
-  const handleDelete = async (postId: string) => {
-    try {
-      await postRepo.deleteUserPost(postId);
-      message.success("Post deleted successfully");
-    } catch (error: any) {
-      message.error(error.response?.data?.message || "Failed to delete post");
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      onClose();
+      resetForm();
     }
   };
 
-  const handleEdit = async (postId: string, updatedData: any) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-[580px]">
+        <DialogHeader>
+          <DialogTitle className="text-xl">Create New Post</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-5 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="title" className="text-sm font-medium">
+              Title <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              disabled={isCreating}
+              placeholder="Enter an engaging title..."
+              className={errors.title ? "border-destructive" : ""}
+            />
+            {errors.title && (
+              <p className="text-xs text-destructive">{errors.title}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-sm font-medium">
+              Description <span className="text-destructive">*</span>
+            </Label>
+            <Textarea
+              id="description"
+              name="description"
+              rows={5}
+              value={formData.description}
+              onChange={handleChange}
+              disabled={isCreating}
+              placeholder="Share your thoughts, ideas, or updates..."
+              className={`resize-none ${errors.description ? "border-destructive" : ""}`}
+            />
+            {errors.description && (
+              <p className="text-xs text-destructive">{errors.description}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="link" className="text-sm font-medium">
+              Link <span className="text-muted-foreground">(Optional)</span>
+            </Label>
+            <Input
+              id="link"
+              name="link"
+              value={formData.link}
+              onChange={handleChange}
+              disabled={isCreating}
+              placeholder="https://example.com"
+              className={errors.link ? "border-destructive" : ""}
+            />
+            {errors.link && (
+              <p className="text-xs text-destructive">{errors.link}</p>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              onClose();
+              resetForm();
+            }}
+            disabled={isCreating}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleCreate} disabled={isCreating} className="gap-2">
+            {isCreating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Create Post
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+});
+
+CreatePostDialog.displayName = 'CreatePostDialog';
+
+const Posts = () => {
+  const [activeTab, setActiveTab] = useState("admin");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const listRef = useRef<PaginatedListRef<any>>(null);
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
+
+  const handlePostCreated = useCallback(() => {
+    listRef.current?.refresh?.();
+  }, []);
+
+  const handleDelete = useCallback(async (postId: string) => {
+    try {
+      await postRepo.deleteUserPost(postId);
+      message.success("Post deleted successfully");
+      listRef.current?.removeItem(postId);
+    } catch (error: any) {
+      message.error(error.response?.data?.message || "Failed to delete post");
+    }
+  }, []);
+
+  const handleEdit = useCallback(async (postId: string, updatedData: any) => {
     try {
       await postRepo.updateUserPost(postId, updatedData);
       message.success("Post updated successfully");
     } catch (error: any) {
       message.error(error.response?.data?.message || "Failed to update post");
     }
-  };
+  }, []);
 
   return (
     <div className="p-6 space-y-6">
@@ -177,7 +273,8 @@ const Posts = () => {
               };
             }}
             renderItem={(post: any) => (
-              <PostCard
+              <MemoizedPostCard
+                key={post._id}
                 postId={post._id}
                 title={post.title}
                 description={post.description}
@@ -208,7 +305,8 @@ const Posts = () => {
               };
             }}
             renderItem={(post: any) => (
-              <PostCard
+              <MemoizedPostCard
+                key={post._id}
                 postId={post._id}
                 title={post.title}
                 description={post.description}
@@ -224,97 +322,12 @@ const Posts = () => {
           />
         )}
 
-        {/* Create Post Modal */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="sm:max-w-[580px]">
-            <DialogHeader>
-              <DialogTitle className="text-xl">Create New Post</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-5 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="title" className="text-sm font-medium">
-                  Title <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  disabled={isCreating}
-                  placeholder="Enter an engaging title..."
-                  className={errors.title ? "border-destructive" : ""}
-                />
-                {errors.title && (
-                  <p className="text-xs text-destructive">{errors.title}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-medium">
-                  Description <span className="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  rows={5}
-                  value={formData.description}
-                  onChange={handleChange}
-                  disabled={isCreating}
-                  placeholder="Share your thoughts, ideas, or updates..."
-                  className={`resize-none ${errors.description ? "border-destructive" : ""}`}
-                />
-                {errors.description && (
-                  <p className="text-xs text-destructive">{errors.description}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="link" className="text-sm font-medium">
-                  Link <span className="text-muted-foreground">(Optional)</span>
-                </Label>
-                <Input
-                  id="link"
-                  name="link"
-                  value={formData.link}
-                  onChange={handleChange}
-                  disabled={isCreating}
-                  placeholder="https://example.com"
-                  className={errors.link ? "border-destructive" : ""}
-                />
-                {errors.link && (
-                  <p className="text-xs text-destructive">{errors.link}</p>
-                )}
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsModalOpen(false);
-                  resetForm();
-                }}
-                disabled={isCreating}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCreate} disabled={isCreating} className="gap-2">
-                {isCreating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" />
-                    Create Post
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Create Post Modal - Separate component to isolate form state */}
+        <CreatePostDialog
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSuccess={handlePostCreated}
+        />
       </div>
     </div>
   );

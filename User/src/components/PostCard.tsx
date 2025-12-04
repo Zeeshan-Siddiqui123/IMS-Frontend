@@ -102,6 +102,34 @@ export const PostCard = ({
     }
   }, [postId]);
 
+  // Listen for real-time like updates
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const unsubLikeAdded = on('like:added', (payload: any) => {
+      if (payload.postId === postId) {
+        setLikeCount(payload.likeCount);
+        if (payload.userId === user?._id) {
+          setLiked(true);
+        }
+      }
+    });
+
+    const unsubLikeRemoved = on('like:removed', (payload: any) => {
+      if (payload.postId === postId) {
+        setLikeCount(payload.likeCount);
+        if (payload.userId === user?._id) {
+          setLiked(false);
+        }
+      }
+    });
+
+    return () => {
+      unsubLikeAdded?.();
+      unsubLikeRemoved?.();
+    };
+  }, [isConnected, on, postId, user?._id]);
+
   const formatTimeAgo = (dateString) => {
     const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
     if (seconds < 60) return "Just now";
