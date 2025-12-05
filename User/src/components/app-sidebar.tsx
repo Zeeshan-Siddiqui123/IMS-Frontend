@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { UserAvatar } from "@/components/UserAvatar"
-import { Check, LogOut, User, ChevronUp, Download } from "lucide-react"
+import { Check, LogOut, User, ChevronUp, Download, Send } from "lucide-react"
 import Logout from "@/auth/Logout"
 import { userRepo } from "../repositories/userRepo"
 import { useAuthStore } from "@/hooks/store/authStore"
@@ -30,6 +30,7 @@ import { usePwaInstall } from "@/hooks/usePwaInstall"
 const data = {
   navMain: [
     { title: "Dashboard", url: "/", icon: IconDashboard },
+    { title: "Direct", url: "/direct", icon: Send },
     { title: "Post", url: "/posts", icon: IconChartBar },
     { title: "Attendance", url: "/attendance", icon: Check },
   ],

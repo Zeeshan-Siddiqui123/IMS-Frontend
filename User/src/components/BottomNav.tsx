@@ -1,13 +1,13 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Home, FileText, CalendarCheck, User } from 'lucide-react'
+import { Home, FileText, CalendarCheck, User, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 const navItems = [
     { title: 'Home', url: '/', icon: Home },
+    { title: 'Direct', url: '/direct', icon: Send },
     { title: 'Posts', url: '/posts', icon: FileText },
     { title: 'Attendance', url: '/attendance', icon: CalendarCheck },
-    { title: 'Profile', url: '/profile', icon: User },
 ]
 
 export function BottomNav() {

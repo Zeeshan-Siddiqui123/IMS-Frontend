@@ -8,6 +8,7 @@ import UserLayout from "./components/layout/userLayout"
 import Attendance from "./Pages/Attendance"
 import Posts from "./Pages/Posts"
 import Profile from "./Pages/Profile"
+import Direct from "./Pages/Direct"
 
 const App = () => {
   return (
@@ -20,10 +21,11 @@ const App = () => {
         {/* Protected routes with layout */}
         <Route path="/" element={<PrivateRoute> <UserLayout /> </PrivateRoute>}>
           <Route index element={<Dashboard />} />
-          
+
           {/* No need to pass userId prop anymore */}
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/posts" element={<Posts />} />
+          <Route path="/direct" element={<Direct />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
 
