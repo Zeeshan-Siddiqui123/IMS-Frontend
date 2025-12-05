@@ -27,7 +27,10 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png'
           }
-        ]
+        ],
+        display: 'standalone',
+        background_color: '#ffffff',
+        orientation: 'portrait'
       }
     })
   ],
