@@ -35,6 +35,10 @@ const Login: React.FC = () => {
     
     try {
       const data = await userRepo.loginUser(formData)
+      // Store token for socket.io auth (cookies dont work cross-origin on Vercel)
+      if (data.token) {
+        localStorage.setItem('token', data.token)
+      }
       setUser(data.user)
       clearAttendance() 
       message.success("Login successful")

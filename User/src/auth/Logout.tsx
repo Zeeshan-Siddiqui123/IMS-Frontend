@@ -14,6 +14,8 @@ const Logout = () => {
       onOk: async () => {
         try {
           await userRepo.logoutUser()
+          // Clear token used for socket auth
+          localStorage.removeItem('token')
           message.success("Logout successful")
           navigate("/login")
         } catch (err) {
