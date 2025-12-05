@@ -256,18 +256,18 @@ const Dashboard = () => {
   const isCheckedOut = Boolean(todayAttendance?.checkOutTime)
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Welcome Section */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl  font-bold text-foreground">
-            Hey Incubatee, {user.name}! 👋
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
+            Hey, {user.name}! 👋
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
             Here's what's happening with your account today.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {todayAttendance?.shift && (
             <Badge variant="outline" className="gap-1">
               {todayAttendance.shift === 'Morning' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
@@ -289,72 +289,72 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      < div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" >
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Posts</p>
-                <h3 className="text-2xl font-bold mt-1">{totalPosts}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">Total Posts</p>
+                <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalPosts}</h3>
               </div>
-              <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <FileText className="h-6 w-6 text-blue-600" />
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Hours</p>
-                <h3 className="text-2xl font-bold mt-1">{totalHours}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">Total Hours</p>
+                <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalHours}</h3>
               </div>
-              <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                <TimerIcon className="h-6 w-6 text-red-500" />
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <TimerIcon className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Annoucements</p>
-                <h3 className="text-2xl font-bold mt-1">{totalAnnouncements}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">Announcements</p>
+                <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalAnnouncements}</h3>
               </div>
-              <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <Megaphone className="h-6 w-6 text-purple-600" />
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <Megaphone className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Attendance Rate</p>
-                <h3 className="text-2xl font-bold mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground">Attendance Rate</p>
+                <h3 className="text-xl sm:text-2xl font-bold mt-1">
                   {attendanceHistory.length > 0
                     ? Math.round((attendanceStats.present / attendanceHistory.length) * 100)
                     : 0}%
                 </h3>
               </div>
-              <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <CalendarCheck className="h-6 w-6 text-green-600" />
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <CalendarCheck className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div >
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      < div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6" >
         {/* Today's Attendance Card */}
-        <Card>
+        < Card >
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Megaphone className="h-5 w-5" />
@@ -395,10 +395,10 @@ const Dashboard = () => {
               )}
             </div>
           </CardContent>
-        </Card>
+        </Card >
 
         {/* ✅ UPDATED: Attendance Pie Chart with total count */}
-        <Card>
+        < Card >
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
@@ -448,13 +448,13 @@ const Dashboard = () => {
               </div>
             )}
           </CardContent>
-        </Card>
-      </div>
+        </Card >
+      </div >
 
       {/* Weekly Hours & Announcements */}
-      <div className="lg:grid-cols-2 gap-6">
+      < div className="lg:grid-cols-2 gap-6" >
         {/* Weekly Hours Chart */}
-        <Card>
+        < Card >
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
@@ -486,12 +486,12 @@ const Dashboard = () => {
               </div>
             )}
           </CardContent>
-        </Card>
+        </Card >
 
         {/* Admin Announcements */}
 
-      </div>
-    </div>
+      </div >
+    </div >
   )
 }
 

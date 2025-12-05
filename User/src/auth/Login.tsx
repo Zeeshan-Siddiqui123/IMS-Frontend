@@ -62,8 +62,8 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto p-6 mt-10 rounded-lg border shadow bg-white dark:bg-neutral-900">
-      <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+    <div className="max-w-md mx-auto p-4 sm:p-6 mt-6 sm:mt-10 rounded-lg border shadow bg-white dark:bg-neutral-900">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">Login</h2>
 
       <div className="space-y-5 mb-6">
         {/* Email */}

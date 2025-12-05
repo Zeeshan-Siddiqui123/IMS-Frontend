@@ -230,13 +230,13 @@ export const PostCard = ({
   return (
     <>
       <Card className="overflow-hidden border-border ">
-        <CardHeader className="space-y-0">
+        <CardHeader className="space-y-0 p-4 sm:p-6">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <UserAvatar
                 src={authorAvatar}
                 name={displayName}
-                className="h-11 w-11"
+                className="h-9 w-9 sm:h-11 sm:w-11"
                 fallbackColor={isAdmin
                   ? "bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600"
                   : "bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600"
@@ -284,29 +284,29 @@ export const PostCard = ({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
           {/* Post Media (Image or Video) */}
           {image && (
-            <div className="rounded-lg overflow-hidden -mx-6 -mt-2 bg-black/5">
+            <div className="rounded-lg overflow-hidden -mx-4 sm:-mx-6 -mt-1 bg-black/5">
               {isVideo(image) ? (
                 <VideoPlayer
                   src={image}
-                  className="w-full h-auto max-h-[500px] mx-auto"
+                  className="w-full h-auto max-h-[400px] sm:max-h-[500px] mx-auto"
                   playOnHover
                 />
               ) : (
                 <img
                   src={image}
                   alt={title}
-                  className="w-full h-auto max-h-96 object-cover"
+                  className="w-full h-auto max-h-72 sm:max-h-96 object-cover"
                 />
               )}
             </div>
           )}
 
           {/* Post Content */}
-          <div className="space-y-2">
-            <h3 className="font-bold text-lg leading-tight">{title}</h3>
+          <div className="space-y-1.5 sm:space-y-2">
+            <h3 className="font-bold text-base sm:text-lg leading-tight">{title}</h3>
             <p className="text-sm text-foreground/80 leading-relaxed">
               {description}
             </p>

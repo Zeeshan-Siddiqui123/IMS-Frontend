@@ -159,11 +159,11 @@ export default function ProfileShadCN() {
   ]
 
   return (
-    <div className="min-h-screen py-12 px-4">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="min-h-screen py-6 sm:py-12 px-4">
+      <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8">
         {/* Profile Header */}
-        <div className="flex items-center justify-between space-x-4">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             {/* Avatar with upload functionality */}
             <div className="relative group">
               <div
@@ -203,14 +203,14 @@ export default function ProfileShadCN() {
               />
             </div>
 
-            <div>
-              <span className="text-3xl font-bold text-gray-900">{user?.name || "Student Name"}</span>
-              <p className="text-gray-500">{user?.incubation_id || "N/A"}</p>
+            <div className="flex-1 min-w-0">
+              <span className="text-xl sm:text-3xl font-bold text-gray-900 block truncate">{user?.name || "Student Name"}</span>
+              <p className="text-sm sm:text-base text-gray-500 truncate">{user?.incubation_id || "N/A"}</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="default" onClick={() => setIsModalOpen(true)} className="flex items-center gap-2">
-              <Edit3 className="w-4 h-4" /> Edit Profile
+          <div className="flex gap-2 self-start sm:self-center">
+            <Button variant="default" onClick={() => setIsModalOpen(true)} className="flex items-center gap-2" size="sm">
+              <Edit3 className="w-4 h-4" /> <span className="hidden sm:inline">Edit </span>Profile
             </Button>
           </div>
         </div>

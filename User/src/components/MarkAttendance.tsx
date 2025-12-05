@@ -87,28 +87,31 @@ const MarkAttendance: React.FC<Props> = ({ userId }) => {
   }
 
   return (
-    <div className="flex gap-2">
-      <div className="flex gap-2 items-center">
-        {/* User Shift Info */}
+    <div className="flex gap-1 sm:gap-2 flex-wrap items-center">
+      <div className="flex gap-1 sm:gap-2 items-center">
+        {/* User Shift Info - shown on all screens but compact on mobile */}
         {userShift && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground">
             {userShift === 'Morning' ? (
-              <Sun className="w-3.5 h-3.5 text-yellow-500" />
+              <Sun className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-yellow-500" />
             ) : (
-              <Moon className="w-3.5 h-3.5 text-blue-500" />
+              <Moon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-500" />
             )}
-            <span>{userShift} Shift</span>
+            <span className="hidden sm:inline">{userShift}</span>
             {shiftTiming && (
-              <span className="text-muted-foreground">({shiftTiming.start} - {shiftTiming.end})</span>
+              <span className="text-muted-foreground">{shiftTiming.start}-{shiftTiming.end}</span>
             )}
           </div>
         )}
         {/* Warnings */}
         {!userShift && !isCheckedIn && (
-          <p className="text-xs text-yellow-600">No shift assigned. Contact admin.</p>
+          <p className="text-[10px] sm:text-xs text-yellow-600">No shift</p>
         )}
         {userShift && !canCheckIn && !isCheckedIn && (
-          <p className="text-xs text-muted-foreground">Check-in available during your shift hours</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground">
+            <span className="hidden sm:inline">Check-in during shift</span>
+            <span className="sm:hidden">Shift hours only</span>
+          </p>
         )}
       </div>
       {/* Action Buttons */}
@@ -146,33 +149,33 @@ const MarkAttendance: React.FC<Props> = ({ userId }) => {
 
         {/* Status Badges */}
         {isCheckedIn && (
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
             {attendance?.shift && (
-              <Badge variant="outline" className="text-xs gap-1 py-0">
-                {attendance.shift === 'Morning' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
-                {attendance.shift}
+              <Badge variant="outline" className="text-[10px] sm:text-xs gap-0.5 sm:gap-1 py-0 px-1 sm:px-2">
+                {attendance.shift === 'Morning' ? <Sun className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : <Moon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
+                <span className="hidden xs:inline">{attendance.shift}</span>
               </Badge>
             )}
 
             {attendance?.isLate && (
-              <Badge className="bg-yellow-500 text-xs py-0">
-                <AlertCircle className="w-3 h-3 mr-0.5" />Late
+              <Badge className="bg-yellow-500 text-[10px] sm:text-xs py-0 px-1 sm:px-2">
+                <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5" />Late
               </Badge>
             )}
 
             {isCheckedOut && (
               <>
                 {attendance?.isEarlyLeave && (
-                  <Badge className="bg-orange-500 text-xs py-0">Early</Badge>
+                  <Badge className="bg-orange-500 text-[10px] sm:text-xs py-0 px-1 sm:px-2">Early</Badge>
                 )}
 
-                <Badge className={`${getStatusColor(attendance?.status || '')} text-xs py-0`}>
+                <Badge className={`${getStatusColor(attendance?.status || '')} text-[10px] sm:text-xs py-0 px-1 sm:px-2`}>
                   {attendance?.status}
                 </Badge>
 
                 {attendance?.hoursWorked !== undefined && (
-                  <Badge variant="outline" className="text-xs py-0 gap-1">
-                    <Clock className="w-3 h-3" />
+                  <Badge variant="outline" className="text-[10px] sm:text-xs py-0 px-1 sm:px-2 gap-0.5 sm:gap-1">
+                    <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                     {attendance.hoursWorked.toFixed(1)}h
                   </Badge>
                 )}
@@ -180,8 +183,8 @@ const MarkAttendance: React.FC<Props> = ({ userId }) => {
             )}
 
             {!isCheckedOut && attendance?.status?.includes('No Checkout') && (
-              <Badge className="bg-red-500 text-xs py-0">
-                <XCircle className="w-3 h-3 mr-0.5" />No Checkout
+              <Badge className="bg-red-500 text-[10px] sm:text-xs py-0 px-1 sm:px-2">
+                <XCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5" />No Checkout
               </Badge>
             )}
           </div>

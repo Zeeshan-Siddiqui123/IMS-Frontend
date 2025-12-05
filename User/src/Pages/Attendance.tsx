@@ -193,7 +193,7 @@ const Attendance: React.FC = () => {
   );
 
   return (
-    <div className="flex flex-col gap-5 p-6">
+    <div className="flex flex-col gap-4 sm:gap-5 p-4 sm:p-6">
       {/* Shift Info Card */}
       <Card className="border-l-4 border-l-primary">
         <CardHeader className="pb-3">
@@ -270,31 +270,31 @@ const Attendance: React.FC = () => {
               </div>
 
               {/* Time Cards */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Check In</p>
-                  <p className="text-lg font-bold">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="bg-green-50 dark:bg-green-900/20 p-3 sm:p-4 rounded-lg text-center">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Check In</p>
+                  <p className="text-sm sm:text-lg font-bold">
                     {attendance?.checkInTime
                       ? new Date(attendance.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                       : "—"}
                   </p>
                 </div>
 
-                <div className={`p-4 rounded-lg text-center ${isCheckedOut ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-yellow-50 dark:bg-yellow-900/20'}`}>
-                  <p className="text-xs text-muted-foreground mb-1">Check Out</p>
-                  <p className={`text-lg font-bold ${!isCheckedOut ? 'text-yellow-600' : ''}`}>
+                <div className={`p-3 sm:p-4 rounded-lg text-center ${isCheckedOut ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-yellow-50 dark:bg-yellow-900/20'}`}>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Check Out</p>
+                  <p className={`text-sm sm:text-lg font-bold ${!isCheckedOut ? 'text-yellow-600' : ''}`}>
                     {attendance?.checkOutTime
                       ? new Date(attendance.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                       : "Pending"}
                   </p>
                 </div>
 
-                <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Hours</p>
-                  <p className={`text-lg font-bold flex items-center justify-center gap-1 ${todayHours >= 4 ? 'text-green-600' : 'text-red-500'
+                <div className="bg-purple-50 dark:bg-purple-900/20 p-3 sm:p-4 rounded-lg text-center">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Hours</p>
+                  <p className={`text-sm sm:text-lg font-bold flex items-center justify-center gap-1 ${todayHours >= 4 ? 'text-green-600' : 'text-red-500'
                     }`}>
                     {todayHours.toFixed(1)}h
-                    {todayHours >= 4 && <CheckCircle2 className="w-4 h-4" />}
+                    {todayHours >= 4 && <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />}
                   </p>
                 </div>
               </div>

@@ -316,37 +316,37 @@ const Posts = () => {
   }, []);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
 
       <UrlBreadcrumb />
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div className="space-y-1">
+      <div className="flex flex-col gap-4">
+        <div className="w-full space-y-1">
 
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-2 h-11">
-              <TabsTrigger value="admin" className="gap-2">
-                <Badge variant="outline" className="h-5 w-5 rounded-full p-0 border-current">A</Badge>
-                Admin Announcements
+            <TabsList className="grid w-full grid-cols-2 h-10 sm:h-11">
+              <TabsTrigger value="admin" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+                <Badge variant="outline" className="h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 border-current text-[10px] sm:text-xs">A</Badge>
+                <span className="hidden xs:inline">Admin </span>Announcements
               </TabsTrigger>
-              <TabsTrigger value="user" className="gap-2">
-                <User className="w-4 h-4" />
+              <TabsTrigger value="user" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+                <User className="w-3 h-3 sm:w-4 sm:h-4" />
                 User Posts
               </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
-        <Button onClick={() => setIsModalOpen(true)} size="lg" className="gap-2 shadow-md">
-          <Plus className="w-5 h-5" />
+        <Button onClick={() => setIsModalOpen(true)} size="default" className="gap-2 shadow-md w-full sm:w-auto sm:self-end">
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
           Create Post
         </Button>
       </div>
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
         {/* Posts List */}
         {activeTab === "admin" && (
           <PaginatedList
