@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { message } from "antd"
+import { toast } from "sonner"
 import { CheckCircle2, Clock, Sun, Moon, AlertCircle, XCircle } from "lucide-react"
 import { attRepo, AttendanceStatus, AttendanceSettings } from "@/repositories/attRepo"
 
@@ -43,9 +43,9 @@ const MarkAttendance: React.FC<Props> = ({ userId }) => {
         ...res.att,
         canCheckIn: false
       }))
-      message.success(res.message || "Checked in successfully!")
+      toast.success(res.message || "Checked in successfully!")
     } catch (err: any) {
-      message.error(err.response?.data?.error || "Check-in failed")
+      toast.error(err.response?.data?.error || "Check-in failed")
     } finally {
       setIsLoading(false)
     }
@@ -59,9 +59,9 @@ const MarkAttendance: React.FC<Props> = ({ userId }) => {
         ...prev,
         ...res.att
       }))
-      message.success(res.message || "Checked out successfully!")
+      toast.success(res.message || "Checked out successfully!")
     } catch (err: any) {
-      message.error(err.response?.data?.error || "Check-out failed")
+      toast.error(err.response?.data?.error || "Check-out failed")
     } finally {
       setIsLoading(false)
     }

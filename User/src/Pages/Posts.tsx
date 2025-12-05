@@ -21,7 +21,7 @@ import {
   ImagePlus,
   X,
 } from "lucide-react";
-import { message } from "antd";
+import { toast } from "sonner";
 import { postRepo } from "../repositories/postRepo";
 import UrlBreadcrumb from "@/components/UrlBreadcrumb";
 import PaginatedList, { PaginatedListRef } from "../components/PaginatedList";
@@ -75,12 +75,12 @@ const CreatePostDialog = memo(({
     if (file) {
       // Validate file type (image or video)
       if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        message.error('Please select an image or video file');
+        toast.error('Please select an image or video file');
         return;
       }
       // Validate file size (50MB limit)
       if (file.size > 50 * 1024 * 1024) {
-        message.error('File size must be less than 50MB');
+        toast.error('File size must be less than 50MB');
         return;
       }
       setImageFile(file);
@@ -107,7 +107,7 @@ const CreatePostDialog = memo(({
         ...formData,
         image: imageFile || undefined,
       });
-      message.success("Post created successfully");
+      toast.success("Post created successfully");
       resetForm();
       onClose();
       onSuccess();
@@ -115,7 +115,7 @@ const CreatePostDialog = memo(({
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else {
-        message.error(error.response?.data?.message || "Failed to create post");
+        toast.error(error.response?.data?.message || "Failed to create post");
       }
     } finally {
       setIsCreating(false);
@@ -299,19 +299,19 @@ const Posts = () => {
   const handleDelete = useCallback(async (postId: string) => {
     try {
       await postRepo.deleteUserPost(postId);
-      message.success("Post deleted successfully");
+      toast.success("Post deleted successfully");
       listRef.current?.removeItem(postId);
     } catch (error: any) {
-      message.error(error.response?.data?.message || "Failed to delete post");
+      toast.error(error.response?.data?.message || "Failed to delete post");
     }
   }, []);
 
   const handleEdit = useCallback(async (postId: string, updatedData: any) => {
     try {
       await postRepo.updateUserPost(postId, updatedData);
-      message.success("Post updated successfully");
+      toast.success("Post updated successfully");
     } catch (error: any) {
-      message.error(error.response?.data?.message || "Failed to update post");
+      toast.error(error.response?.data?.message || "Failed to update post");
     }
   }, []);
 
@@ -322,7 +322,7 @@ const Posts = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="space-y-1">
-         
+
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}

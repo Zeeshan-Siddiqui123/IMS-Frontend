@@ -41,7 +41,7 @@ import { useAuthStore } from "@/hooks/store/authStore";
 import { likeRepo } from "@/repositories/likeRepo";
 import { commentRepo } from "@/repositories/commentRepo";
 import { useSocket } from "@/hooks/useSocket";
-import { message } from "antd";
+import { toast } from "sonner";
 import { VideoPlayer } from "./VideoPlayer";
 
 interface PostCardProps {
@@ -173,11 +173,11 @@ export const PostCard = ({
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        message.error('Please select an image or video file');
+        toast.error('Please select an image or video file');
         return;
       }
       if (file.size > 50 * 1024 * 1024) {
-        message.error('File size must be less than 50MB');
+        toast.error('File size must be less than 50MB');
         return;
       }
       setEditImageFile(file);

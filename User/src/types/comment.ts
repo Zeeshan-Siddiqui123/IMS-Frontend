@@ -6,6 +6,7 @@ export interface Comment {
     user: {
         _id: string;
         name: string;
+        avatar?: string;
     };
     parentComment?: string | null;
     depth: number;

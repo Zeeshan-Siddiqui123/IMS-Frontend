@@ -49,7 +49,7 @@ export default function ProfileShadCN() {
             name: res.user?.name || res.name,
             bq_id: res.user?.bq_id || res.bq_id,
             email: res.user?.email || res.email,
-            phone: res.user?.phone || "",
+            phone: (res.user?.phone || "").startsWith("92") ? (res.user?.phone || "").slice(2) : (res.user?.phone || ""),
             CNIC: res.user?.CNIC || "",
             course: res.user?.course || "",
             gender: res.user?.gender || "",
@@ -69,14 +69,26 @@ export default function ProfileShadCN() {
   }, [])
 
   const handleChange = (e: any) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const { name, value } = e.target;
+    if (name === "phone") {
+      const cleaned = value.replace(/\D/g, "");
+      if (cleaned.length <= 10) {
+        setFormData({ ...formData, [name]: cleaned });
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   }
 
   const handleSave = async () => {
     try {
       if (editingId) {
-        await userRepo.updateUser(editingId, formData)
-        setUser({ ...user, ...formData })
+        const dataToSend = {
+          ...formData,
+          phone: formData.phone ? `92${formData.phone}` : "",
+        };
+        await userRepo.updateUser(editingId, dataToSend)
+        setUser({ ...user, ...dataToSend })
         toast.success("Profile updated successfully")
       }
       setIsModalOpen(false)
@@ -224,7 +236,7 @@ export default function ProfileShadCN() {
               <DialogTitle>Edit Profile</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              {["name", "bq_id", "email", "phone", "CNIC"].map((field) => (
+              {["name", "bq_id", "email", "CNIC"].map((field) => (
                 <div key={field} className="space-y-2">
                   <Label htmlFor={field} className="text-sm font-medium">
                     {field.toUpperCase()}
@@ -237,6 +249,25 @@ export default function ProfileShadCN() {
                   />
                 </div>
               ))}
+
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-sm font-medium">
+                  PHONE
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-500 font-medium">
+                    +92
+                  </span>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="pl-12"
+                    placeholder="3001234567"
+                  />
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsModalOpen(false)}>

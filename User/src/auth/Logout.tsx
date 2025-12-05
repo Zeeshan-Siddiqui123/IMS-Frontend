@@ -1,4 +1,5 @@
-import { Modal, message } from "antd"
+import { Modal } from "antd"
+import { toast } from "sonner"
 import { userRepo } from "@/repositories/userRepo"
 import { useNavigate } from "react-router-dom"
 
@@ -16,10 +17,10 @@ const Logout = () => {
           await userRepo.logoutUser()
           // Clear token used for socket auth
           localStorage.removeItem('token')
-          message.success("Logout successful")
+          toast.success("Logout successful")
           navigate("/login")
         } catch (err) {
-          message.error("Logout failed")
+          toast.error("Logout failed")
         }
       },
     })

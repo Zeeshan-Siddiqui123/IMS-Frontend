@@ -1,6 +1,6 @@
 // auth/Login.tsx
 import React, { useState } from "react"
-import { message } from "antd"
+import { toast } from "sonner"
 import { CiUnread, CiRead } from "react-icons/ci"
 import { userRepo } from "../repositories/userRepo"
 import { Button } from "../components/ui/button"
@@ -32,7 +32,7 @@ const Login: React.FC = () => {
   const handleSubmit = async () => {
     setIsLoading(true)
     setErrors({})
-    
+
     try {
       const data = await userRepo.loginUser(formData)
       // Store token for socket.io auth (cookies dont work cross-origin on Vercel)
@@ -40,12 +40,12 @@ const Login: React.FC = () => {
         localStorage.setItem('token', data.token)
       }
       setUser(data.user)
-      clearAttendance() 
-      message.success("Login successful")
+      clearAttendance()
+      toast.success("Login successful")
       navigate("/")
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Login failed"
-      message.error(errorMessage)
+      toast.error(errorMessage)
       setErrors({
         email: " ",
         password: errorMessage,
@@ -68,8 +68,8 @@ const Login: React.FC = () => {
       <div className="space-y-5 mb-6">
         {/* Email */}
         <div>
-          <label 
-            htmlFor="email" 
+          <label
+            htmlFor="email"
             className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             Email
@@ -92,8 +92,8 @@ const Login: React.FC = () => {
 
         {/* Password */}
         <div>
-          <label 
-            htmlFor="password" 
+          <label
+            htmlFor="password"
             className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             Password

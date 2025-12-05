@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { message, Select, Radio } from "antd";
+import { Select, Radio } from "antd";
+import { toast } from "sonner";
 import { CiUnread, CiRead } from "react-icons/ci";
 import { userRepo } from "../repositories/userRepo";
 import { Button } from "../components/ui/button";
@@ -35,7 +36,7 @@ const SignUp: React.FC = () => {
         setGenders(res.genders || []);
         setShifts(res.shifts || []);
       } catch (err) {
-        message.error("Failed to load options");
+        toast.error("Failed to load options");
       }
     };
     fetchEnums();
@@ -43,11 +44,11 @@ const SignUp: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
+
     if (name === "phone") {
       // Remove all non-numeric characters
       const cleaned = value.replace(/\D/g, "");
-      
+
       // Limit to 10 digits (after +92)
       if (cleaned.length <= 10) {
         setFormData((prev) => ({ ...prev, [name]: cleaned }));
@@ -55,7 +56,7 @@ const SignUp: React.FC = () => {
     } else if (name === "CNIC") {
       // Remove all non-numeric characters
       const cleaned = value.replace(/\D/g, "");
-      
+
       // Limit to 13 digits
       if (cleaned.length <= 13) {
         setFormData((prev) => ({ ...prev, [name]: cleaned }));
@@ -73,7 +74,7 @@ const SignUp: React.FC = () => {
   const formatCNICDisplay = (cnic: string) => {
     if (!cnic) return "";
     const cleaned = cnic.replace(/\D/g, "");
-    
+
     if (cleaned.length <= 5) return cleaned;
     if (cleaned.length <= 12) {
       return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
@@ -98,9 +99,9 @@ const SignUp: React.FC = () => {
         phone: formData.phone ? `92${formData.phone}` : "",
         CNIC: getCNICForDB(formData.CNIC),
       };
-      
+
       await userRepo.addUser(dataToSend);
-      message.success("User registered successfully");
+      toast.success("User registered successfully");
       navigate("/login");
       setFormData({
         name: "",
@@ -118,7 +119,7 @@ const SignUp: React.FC = () => {
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else {
-        message.error(error.response?.data?.message || "Registration failed");
+        toast.error(error.response?.data?.message || "Registration failed");
       }
     }
   };
