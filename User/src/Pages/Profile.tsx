@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import {
   Dialog,
   DialogContent,
@@ -14,12 +15,26 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { Edit3, Camera, Loader2 } from "lucide-react"
+import {
+  Edit3,
+  Camera,
+  Loader2,
+  LogOut,
+  Mail,
+  Phone,
+  CreditCard,
+  GraduationCap,
+  User2,
+  Sun,
+  Moon,
+  IdCard
+} from "lucide-react"
 import { userRepo } from "../repositories/userRepo"
 import { useAuthStore } from "@/hooks/store/authStore"
 import { UserAvatar } from "../components/UserAvatar"
+import Logout from "@/auth/Logout"
 
-export default function ProfileShadCN() {
+export default function ProfilePage() {
   const { user: authUser, setUser: setAuthUser } = useAuthStore()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -36,8 +51,21 @@ export default function ProfileShadCN() {
     shift: "",
   })
 
+  // New states for avatar handling
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+
   const [editingId, setEditingId] = useState<string | null>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
+
+  // Reset preview when modal closes
+  useEffect(() => {
+    if (!isModalOpen) {
+      setAvatarFile(null)
+      setAvatarPreview(null)
+    }
+  }, [isModalOpen])
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -83,19 +111,41 @@ export default function ProfileShadCN() {
 
   const handleSave = async () => {
     try {
+      setIsSaving(true)
+
+      // Upload avatar first if selected
+      let newAvatarUrl = user?.avatar;
+
+      if (avatarFile) {
+        try {
+          const res = await userRepo.updateAvatar(avatarFile)
+          newAvatarUrl = res.user.avatar
+
+          if (authUser) {
+            setAuthUser({ ...authUser, avatar: newAvatarUrl } as any)
+          }
+        } catch (error: any) {
+          console.error("Avatar upload failed:", error)
+          toast.error("Failed to upload profile picture")
+          return // Stop if avatar upload fails
+        }
+      }
+
       if (editingId) {
         const dataToSend = {
           ...formData,
           phone: formData.phone ? `92${formData.phone}` : "",
         };
         await userRepo.updateUser(editingId, dataToSend)
-        setUser({ ...user, ...dataToSend })
+        setUser({ ...user, ...dataToSend, avatar: newAvatarUrl })
         toast.success("Profile updated successfully")
       }
       setIsModalOpen(false)
     } catch (error: any) {
       console.error(error)
       toast.error("Action failed")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -103,7 +153,7 @@ export default function ProfileShadCN() {
     avatarInputRef.current?.click()
   }
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -117,171 +167,233 @@ export default function ProfileShadCN() {
       return
     }
 
-    try {
-      setIsUploadingAvatar(true)
-      const res = await userRepo.updateAvatar(file)
+    // Set file and preview
+    setAvatarFile(file)
+    const previewUrl = URL.createObjectURL(file)
+    setAvatarPreview(previewUrl)
 
-      setUser({ ...user, avatar: res.user.avatar })
-
-      if (authUser) {
-        setAuthUser({ ...authUser, avatar: res.user.avatar } as any)
-      }
-
-      toast.success("Avatar updated successfully")
-    } catch (error: any) {
-      console.error(error)
-      toast.error(error.response?.data?.message || "Failed to update avatar")
-    } finally {
-      setIsUploadingAvatar(false)
-      if (avatarInputRef.current) {
-        avatarInputRef.current.value = ''
-      }
+    // Clean up old preview URL to avoid memory leaks
+    if (avatarPreview) {
+      URL.revokeObjectURL(avatarPreview)
     }
+  }
+
+  const triggerLogout = () => {
+    document.getElementById("logoutBtn")?.click()
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading profile...</p>
+        </div>
       </div>
     )
   }
 
   const profileFields = [
-    { label: "BQ ID", value: user?.bq_id },
-    { label: "Name", value: user?.name },
-    { label: "Email", value: user?.email },
-    { label: "Phone", value: user?.phone },
-    { label: "CNIC", value: user?.CNIC },
-    { label: "Course", value: user?.course },
-    { label: "Gender", value: user?.gender },
-    { label: "Shift", value: user?.shift },
+    { label: "BanoQabil ID", value: user?.bq_id, icon: IdCard },
+    { label: "Email", value: user?.email, icon: Mail },
+    { label: "Phone", value: user?.phone ? `+${user?.phone}` : null, icon: Phone },
+    { label: "CNIC", value: user?.CNIC, icon: CreditCard },
+    { label: "Course", value: user?.course, icon: GraduationCap },
+    { label: "Gender", value: user?.gender, icon: User2 },
+    { label: "Shift", value: user?.shift, icon: user?.shift === "Morning" ? Sun : Moon },
   ]
 
   return (
-    <div className="min-h-screen py-6 sm:py-12 px-4">
-      <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8">
-        {/* Profile Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* Avatar with upload functionality */}
-            <div className="relative group">
+    <div className="p-4 sm:p-6 space-y-6">
+      {/* Profile Card */}
+      <Card>
+        <CardContent className="pt-6 pb-6">
+          {/* Avatar and User Info - Always inline */}
+          <div className="flex items-center gap-4">
+            <div className="relative group shrink-0">
               <div
-                className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg cursor-pointer"
-                onClick={handleAvatarClick}
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-border shadow-lg bg-muted"
               >
-                {isUploadingAvatar ? (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                    <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
-                  </div>
-                ) : (
-                  <UserAvatar
-                    src={user?.avatar}
-                    name={user?.name}
-                    className="w-full h-full border-0"
-                    fallbackColor="bg-indigo-500"
-                  />
+                <UserAvatar
+                  src={user?.avatar}
+                  name={user?.name}
+                  className="w-full h-full border-0 rounded-none"
+                  fallbackColor="bg-gradient-to-br from-primary to-primary/60"
+                />
+              </div>
+            </div>
+
+            {/* User Info */}
+            <div className="flex-1 min-w-0 space-y-2">
+              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
+                {user?.name || "Student Name"}
+              </h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="secondary" className="gap-1 text-xs">
+                  <IdCard className="w-3 h-3" />
+                  {user?.incubation_id || "N/A"}
+                </Badge>
+                {user?.shift && (
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    {user?.shift === "Morning" ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+                    {user?.shift}
+                  </Badge>
                 )}
               </div>
-
-              {/* Camera overlay */}
-              <div
-                className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                onClick={handleAvatarClick}
-              >
-                <Camera className="w-6 h-6 text-white" />
-              </div>
-
-              {/* Hidden file input */}
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden"
-                disabled={isUploadingAvatar}
-              />
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <span className="text-xl sm:text-3xl font-bold text-gray-900 block truncate">{user?.name || "Student Name"}</span>
-              <p className="text-sm sm:text-base text-gray-500 truncate">{user?.incubation_id || "N/A"}</p>
             </div>
           </div>
-          <div className="flex gap-2 self-start sm:self-center">
-            <Button variant="default" onClick={() => setIsModalOpen(true)} className="flex items-center gap-2" size="sm">
-              <Edit3 className="w-4 h-4" /> <span className="hidden sm:inline">Edit </span>Profile
+        </CardContent>
+      </Card>
+
+      {/* Details Card */}
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-lg flex items-center gap-2">Personal Information
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsModalOpen(true)}
+              className="gap-1.5 h-8"
+            >
+              <Edit3 className="w-4 h-4" />
+              <span>Edit</span>
             </Button>
-          </div>
-        </div>
-
-        {/* Tabs for Details */}
-        <Card className="p-6">
-          <Tabs defaultValue="details" className="w-full">
-            <TabsContent value="details" className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profileFields.map((field, idx) => (
-                <Card key={idx} className="p-4 flex flex-col gap-1 border border-gray-200 shadow hover:shadow-md transition">
-                  <CardContent className="p-0">
-                    <p className="text-sm text-gray-400">{field.label}</p>
-                    <p className="font-semibold text-gray-900">{field.value || "N/A"}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </TabsContent>
-          </Tabs>
-        </Card>
-
-        {/* Dialog for updating profile */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Edit Profile</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              {["name", "bq_id", "email", "CNIC"].map((field) => (
-                <div key={field} className="space-y-2">
-                  <Label htmlFor={field} className="text-sm font-medium">
-                    {field.toUpperCase()}
-                  </Label>
-                  <Input
-                    id={field}
-                    name={field}
-                    value={formData[field]}
-                    onChange={handleChange}
-                  />
-                </div>
-              ))}
-
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-medium">
-                  PHONE
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-gray-500 font-medium">
-                    +92
-                  </span>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="pl-12"
-                    placeholder="3001234567"
-                  />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          {profileFields.map((field, idx) => {
+            const Icon = field.icon
+            return (
+              <div key={idx}>
+                {idx > 0 && <Separator className="my-3" />}
+                <div className="flex items-center gap-4 py-2">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-muted">
+                    <Icon className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                      {field.label}
+                    </p>
+                    <p className="font-medium text-foreground truncate">
+                      {field.value || "Not provided"}
+                    </p>
+                  </div>
                 </div>
               </div>
+            )
+          })}
+        </CardContent>
+      </Card>
+
+      {/* Hidden Logout component */}
+      <Logout />
+
+      {/* Logout Button at Bottom */}
+      <Button
+        variant="destructive"
+        size="lg"
+        onClick={triggerLogout}
+        className="w-full gap-2"
+      >
+        <LogOut className="w-4 h-4" />
+        Logout
+      </Button>
+
+      {/* Dialog for updating profile */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Profile Picture Section */}
+            <div className="flex flex-col items-center gap-3 pb-4 border-b">
+              <div className="relative group">
+                <div
+                  className="w-20 h-20 rounded-full overflow-hidden border-2 border-border cursor-pointer bg-muted"
+                  onClick={handleAvatarClick}
+                >
+                  <UserAvatar
+                    src={avatarPreview || user?.avatar}
+                    name={user?.name}
+                    className="w-full h-full border-0 rounded-none"
+                    fallbackColor="bg-gradient-to-br from-primary to-primary/60"
+                  />
+                </div>
+                {/* Camera overlay */}
+                <div
+                  className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                  onClick={handleAvatarClick}
+                >
+                  <Camera className="w-4 h-4 text-white" />
+                </div>
+
+                {/* Hidden file input - moved here inside modal */}
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAvatarClick}
+                disabled={isUploadingAvatar}
+                className="gap-2"
+              >
+                <Camera className="w-4 h-4" />
+                {avatarFile ? "Change Selected" : "Change Photo"}
+              </Button>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+
+            {["name", "bq_id", "email", "CNIC"].map((field) => (
+              <div key={field} className="space-y-2">
+                <Label htmlFor={field} className="text-sm font-medium">
+                  {field === "bq_id" ? "BQ ID" : field === "CNIC" ? "CNIC" : field.charAt(0).toUpperCase() + field.slice(1)}
+                </Label>
+                <Input
+                  id={field}
+                  name={field}
+                  value={formData[field]}
+                  onChange={handleChange}
+                />
+              </div>
+            ))}
+
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-sm font-medium">
+                Phone
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-muted-foreground font-medium">
+                  +92
+                </span>
+                <Input
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="pl-12"
+                  placeholder="3001234567"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
