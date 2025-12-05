@@ -122,8 +122,10 @@
 
   html,
   body {
-    /* Revert overscroll-behavior to avoid white screen issues */
-    /* overscroll-behavior-y: none; */
+    height: 100%;
+    overscroll-behavior-y: none;
+    /* Optional: Disable touch callout on iOS to reduce accidental gestures */
+    -webkit-touch-callout: none;
   }
 
   body {
