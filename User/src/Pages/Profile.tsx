@@ -200,7 +200,7 @@ export default function ProfilePage() {
     { label: "CNIC", value: user?.CNIC, icon: CreditCard },
     { label: "Course", value: user?.course, icon: GraduationCap },
     { label: "Gender", value: user?.gender, icon: User2 },
-    { label: "Shift", value: user?.shift, icon: user?.shift === "Morning" ? Sun : Moon },
+    // { label: "Shift", value: user?.shift, icon: user?.shift === "Morning" ? Sun : Moon },
   ]
 
   return (
