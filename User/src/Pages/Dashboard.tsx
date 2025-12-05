@@ -79,7 +79,11 @@ const Dashboard = () => {
   const [totalLikes, setTotalLikes] = useState(0)
   const [totalComments, setTotalComments] = useState(0)
   const [totalPosts, setTotalPosts] = useState(0)
-  const [attendanceStats, setAttendanceStats] = useState({ present: 0, absent: 0, late: 0 })
+  const [attendanceStats, setAttendanceStats] = useState({ 
+    present: 0, 
+    absent: 0, 
+    late: 0
+  })
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -110,22 +114,53 @@ const Dashboard = () => {
         const todayRes = await attRepo.getTodayStatus(user._id)
         setTodayAttendance(todayRes)
 
-        // Fetch attendance history
-        const historyRes = await attRepo.getUserHistory(user._id)
-        const history = historyRes.history || []
-        setAttendanceHistory(history)
+        // ✅ FIXED: Fetch ALL attendance history using pagination
+        let allHistory: any[] = []
+        let currentPage = 1
+        let hasMoreData = true
+        
+        while (hasMoreData) {
+          const historyRes = await attRepo.getUserHistory(user._id, currentPage, 100)
+          const pageHistory = historyRes.history || []
+          
+          if (pageHistory.length === 0) {
+            hasMoreData = false
+          } else {
+            allHistory = [...allHistory, ...pageHistory]
+            
+            // Check if there are more pages
+            const totalPages = historyRes.pagination?.totalPages || 1
+            if (currentPage >= totalPages) {
+              hasMoreData = false
+            } else {
+              currentPage++
+            }
+          }
+        }
+        
+        setAttendanceHistory(allHistory)
+        console.log('📊 Total Attendance Records Fetched:', allHistory.length)
 
-        // Calculate attendance stats (handles new statuses)
-        const presentCount = history.filter((h: any) => h.status === 'Present').length
-        const absentCount = history.filter((h: any) => h.status === 'Absent').length
-        const lateCount = history.filter((h: any) => h.status?.includes('Late')).length
-        setAttendanceStats({ present: presentCount, absent: absentCount, late: lateCount })
+        // ✅ UPDATED: Calculate ALL attendance stats from complete history
+        const presentCount = allHistory.filter((h: any) => h.status === 'Present').length
+        const absentCount = allHistory.filter((h: any) => h.status === 'Absent').length
+        const lateCount = allHistory.filter((h: any) => h.status?.includes('Late')).length
+        
+        console.log('✅ Present:', presentCount)
+        console.log('❌ Absent:', absentCount)
+        console.log('⏰ Late:', lateCount)
+        
+        setAttendanceStats({ 
+          present: presentCount, 
+          absent: absentCount, 
+          late: lateCount
+        })
 
         // Fetch user's posts
         const postsRes = await postRepo.getAllUsersPosts(1, 100)
         const userPosts = (postsRes.data || []).filter((p: any) => p.user === user._id || p.user?._id === user._id)
 
-        // Fetch like and comment counts
+        // ✅ CHANGED: Fetch stats for TOP 10 posts only (not all posts)
         let likesTotal = 0
         let commentsTotal = 0
         const postsWithStats: PostStat[] = []
@@ -185,12 +220,15 @@ const Dashboard = () => {
   // Chart colors
   const COLORS = ['#22c55e', '#ef4444', '#f59e0b', '#3b82f6']
 
-  // Attendance pie data
+  // ✅ UPDATED: Attendance pie data (overall, not last 10 days)
   const attendancePieData = [
     { name: 'Present', value: attendanceStats.present, color: '#22c55e' },
     { name: 'Absent', value: attendanceStats.absent, color: '#ef4444' },
     { name: 'Late', value: attendanceStats.late, color: '#f59e0b' },
   ].filter(d => d.value > 0)
+
+  // ✅ ADDED: Total attendance count display
+  const totalAttendanceRecords = attendanceHistory.length
 
   // Post engagement chart data
   const postEngagementData = myPosts.slice(0, 5).map(post => ({
@@ -397,36 +435,51 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Attendance Pie Chart */}
+        {/* ✅ UPDATED: Attendance Pie Chart with total count */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
               Attendance Overview
             </CardTitle>
-            <CardDescription>Your attendance distribution</CardDescription>
+            <CardDescription>
+              Your overall attendance distribution ({totalAttendanceRecords} total records)
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {attendancePieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={attendancePieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {attendancePieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="space-y-4">
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={attendancePieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {attendancePieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+                
+                {/* ✅ ADDED: Summary stats below chart */}
+                <div className="grid grid-cols-1 gap-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span className="text-muted-foreground">Present: {attendanceStats.present}</span>
+                  </div> <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <span className="text-muted-foreground">Late: {attendanceStats.late}</span>
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="flex items-center justify-center h-[200px]">
                 <p className="text-muted-foreground">No attendance data yet</p>
