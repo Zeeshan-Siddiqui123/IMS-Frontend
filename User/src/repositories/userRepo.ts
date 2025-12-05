@@ -40,6 +40,16 @@ export class UserRepo {
     const response = await api.post("/api/user/signup", data)
     return response.data
   }
+
+  async addUser(data: any) {
+    const response = await api.post("/api/user/signup", data)
+    return response.data
+  }
+
+  async getEnums() {
+    const response = await api.get("/api/user/enums")
+    return response.data
+  }
 }
 
 export const userRepo = new UserRepo();
