@@ -2,13 +2,20 @@
 
 import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { message, Modal } from "antd"
-import Loader from "@/components/Loader"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { toast } from "sonner"
+import { Edit3, Camera, Loader2 } from "lucide-react"
 import { userRepo } from "../repositories/userRepo"
-import { Edit3 as EditIcon, Camera, Loader2 } from "lucide-react"
-import { Input } from "antd"
 import { useAuthStore } from "@/hooks/store/authStore"
 
 export default function ProfileShadCN() {
@@ -52,14 +59,13 @@ export default function ProfileShadCN() {
         setEditingId(res.user?._id || res._id)
       } catch (err) {
         console.error(err)
-        message.error("Failed to fetch profile")
+        toast.error("Failed to fetch profile")
       } finally {
         setLoading(false)
       }
     }
 
     fetchUser()
-
   }, [])
 
   const handleChange = (e: any) => {
@@ -71,12 +77,12 @@ export default function ProfileShadCN() {
       if (editingId) {
         await userRepo.updateUser(editingId, formData)
         setUser({ ...user, ...formData })
-        message.success("Profile updated successfully")
+        toast.success("Profile updated successfully")
       }
       setIsModalOpen(false)
     } catch (error: any) {
       console.error(error)
-      message.error("Action failed")
+      toast.error("Action failed")
     }
   }
 
@@ -88,15 +94,13 @@ export default function ProfileShadCN() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
-      message.error('Please select an image file')
+      toast.error("Please select an image file")
       return
     }
 
-    // Validate file size (2MB limit for avatars)
     if (file.size > 2 * 1024 * 1024) {
-      message.error('Image size must be less than 2MB')
+      toast.error("Image size must be less than 2MB")
       return
     }
 
@@ -104,28 +108,31 @@ export default function ProfileShadCN() {
       setIsUploadingAvatar(true)
       const res = await userRepo.updateAvatar(file)
 
-      // Update local user state
       setUser({ ...user, avatar: res.user.avatar })
 
-      // Update auth store so sidebar updates too
       if (authUser) {
         setAuthUser({ ...authUser, avatar: res.user.avatar } as any)
       }
 
-      message.success("Avatar updated successfully")
+      toast.success("Avatar updated successfully")
     } catch (error: any) {
       console.error(error)
-      message.error(error.response?.data?.message || "Failed to update avatar")
+      toast.error(error.response?.data?.message || "Failed to update avatar")
     } finally {
       setIsUploadingAvatar(false)
-      // Reset file input
       if (avatarInputRef.current) {
         avatarInputRef.current.value = ''
       }
     }
   }
 
-  if (loading) return <Loader />
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
+      </div>
+    )
+  }
 
   const profileFields = [
     { label: "BQ ID", value: user?.bq_id },
@@ -139,7 +146,7 @@ export default function ProfileShadCN() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen py-12 px-4">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Profile Header */}
         <div className="flex items-center justify-between space-x-4">
@@ -189,51 +196,58 @@ export default function ProfileShadCN() {
           </div>
           <div className="flex gap-2">
             <Button variant="default" onClick={() => setIsModalOpen(true)} className="flex items-center gap-2">
-              <EditIcon className="w-4 h-4" /> Edit Profile
+              <Edit3 className="w-4 h-4" /> Edit Profile
             </Button>
-
           </div>
         </div>
 
-        {/* Tabs for Details / Contact */}
+        {/* Tabs for Details */}
         <Card className="p-6">
           <Tabs defaultValue="details" className="w-full">
-
-
             <TabsContent value="details" className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {profileFields.map((field, idx) => (
                 <Card key={idx} className="p-4 flex flex-col gap-1 border border-gray-200 shadow hover:shadow-md transition">
-                  <p className="text-sm text-gray-400">{field.label}</p>
-                  <p className="font-semibold text-gray-900">{field.value || "N/A"}</p>
+                  <CardContent className="p-0">
+                    <p className="text-sm text-gray-400">{field.label}</p>
+                    <p className="font-semibold text-gray-900">{field.value || "N/A"}</p>
+                  </CardContent>
                 </Card>
               ))}
             </TabsContent>
           </Tabs>
         </Card>
 
-        {/* Modal for updating profile */}
-        <Modal
-          title="Edit Profile"
-          open={isModalOpen}
-          onCancel={() => setIsModalOpen(false)}
-          footer={null}
-          centered
-        >
-          <div className="space-y-4">
-            {["name", "bq_id", "email", "phone", "CNIC"].map((field) => (
-              <div key={field}>
-                <label className="block mb-1 font-medium text-gray-700">{field.toUpperCase()}</label>
-                <Input name={field} value={formData[field]} onChange={handleChange} />
-              </div>
-            ))}
-
-
-
-            <Button className="w-full mt-4" onClick={handleSave}>
-              Save Changes
-            </Button>
-          </div>
-        </Modal>
+        {/* Dialog for updating profile */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit Profile</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {["name", "bq_id", "email", "phone", "CNIC"].map((field) => (
+                <div key={field} className="space-y-2">
+                  <Label htmlFor={field} className="text-sm font-medium">
+                    {field.toUpperCase()}
+                  </Label>
+                  <Input
+                    id={field}
+                    name={field}
+                    value={formData[field]}
+                    onChange={handleChange}
+                  />
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
