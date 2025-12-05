@@ -1,4 +1,4 @@
-import {  type Icon } from "@tabler/icons-react"
+import { type Icon } from "@tabler/icons-react"
 
 
 import {
@@ -9,7 +9,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { Link } from "react-router-dom"
-
+import { useNavigate } from "react-router-dom"
 export function NavMain({
   items,
 }: {
@@ -19,24 +19,18 @@ export function NavMain({
     icon?: Icon
   }[]
 }) {
+
+  const navigate = useNavigate()
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            
-            
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
+              <SidebarMenuButton className="cursor-pointer active:bg-accent focus:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" tooltip={item.title} onClick={() => navigate(item.url)}>
                 {item.icon && <item.icon />}
-                <Link to={item.url}>
-                  <span>{item.title}</span>
-                </Link>
-
+                <span className="text-base">{item.title}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
