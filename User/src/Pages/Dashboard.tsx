@@ -12,7 +12,6 @@ import { useAuthStore } from "@/hooks/store/authStore"
 import {
   CalendarCheck,
   Clock,
-  Heart,
   MessageSquare,
   FileText,
   TrendingUp,
@@ -22,7 +21,8 @@ import {
   LogOut,
   Megaphone,
   Sun,
-  Moon
+  Moon,
+  TimerIcon
 } from "lucide-react"
 import {
   BarChart,
@@ -76,12 +76,12 @@ const Dashboard = () => {
   const [dashboardLoading, setDashboardLoading] = useState(true)
 
   // Stats
-  const [totalLikes, setTotalLikes] = useState(0)
-  const [totalComments, setTotalComments] = useState(0)
+  const [totalHours, setTotalHours] = useState(0)
+  const [totalAnnouncements, setTotalAnnouncements] = useState(0)
   const [totalPosts, setTotalPosts] = useState(0)
-  const [attendanceStats, setAttendanceStats] = useState({ 
-    present: 0, 
-    absent: 0, 
+  const [attendanceStats, setAttendanceStats] = useState({
+    present: 0,
+    absent: 0,
     late: 0
   })
 
@@ -118,16 +118,16 @@ const Dashboard = () => {
         let allHistory: any[] = []
         let currentPage = 1
         let hasMoreData = true
-        
+
         while (hasMoreData) {
           const historyRes = await attRepo.getUserHistory(user._id, currentPage, 100)
           const pageHistory = historyRes.history || []
-          
+
           if (pageHistory.length === 0) {
             hasMoreData = false
           } else {
             allHistory = [...allHistory, ...pageHistory]
-            
+
             // Check if there are more pages
             const totalPages = historyRes.pagination?.totalPages || 1
             if (currentPage >= totalPages) {
@@ -137,7 +137,7 @@ const Dashboard = () => {
             }
           }
         }
-        
+
         setAttendanceHistory(allHistory)
         console.log('📊 Total Attendance Records Fetched:', allHistory.length)
 
@@ -145,14 +145,10 @@ const Dashboard = () => {
         const presentCount = allHistory.filter((h: any) => h.status === 'Present').length
         const absentCount = allHistory.filter((h: any) => h.status === 'Absent').length
         const lateCount = allHistory.filter((h: any) => h.status?.includes('Late')).length
-        
-        console.log('✅ Present:', presentCount)
-        console.log('❌ Absent:', absentCount)
-        console.log('⏰ Late:', lateCount)
-        
-        setAttendanceStats({ 
-          present: presentCount, 
-          absent: absentCount, 
+
+        setAttendanceStats({
+          present: presentCount,
+          absent: absentCount,
           late: lateCount
         })
 
@@ -188,8 +184,8 @@ const Dashboard = () => {
         }
 
         setMyPosts(postsWithStats)
-        setTotalLikes(likesTotal)
-        setTotalComments(commentsTotal)
+        setTotalHours(likesTotal)
+        setTotalAnnouncements(commentsTotal)
         setTotalPosts(userPosts.length)
 
         // Fetch admin announcements
@@ -253,7 +249,7 @@ const Dashboard = () => {
       {/* Welcome Section */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-3xl  font-bold text-foreground">
             Hey Incubatee, {user.name}! 👋
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -301,11 +297,11 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Likes</p>
-                <h3 className="text-2xl font-bold mt-1">{totalLikes}</h3>
+                <p className="text-sm text-muted-foreground">Total Hours</p>
+                <h3 className="text-2xl font-bold mt-1">{totalHours}</h3>
               </div>
               <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                <Heart className="h-6 w-6 text-red-500" />
+                <TimerIcon className="h-6 w-6 text-red-500" />
               </div>
             </div>
           </CardContent>
@@ -315,11 +311,11 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Comments</p>
-                <h3 className="text-2xl font-bold mt-1">{totalComments}</h3>
+                <p className="text-sm text-muted-foreground">Total Annoucements</p>
+                <h3 className="text-2xl font-bold mt-1">{totalAnnouncements}</h3>
               </div>
               <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <MessageSquare className="h-6 w-6 text-purple-600" />
+                <Megaphone className="h-6 w-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
@@ -350,88 +346,42 @@ const Dashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Today's Attendance
+              <Megaphone className="h-5 w-5" />
+              Admin Announcements
             </CardTitle>
-            <CardDescription>Your check-in/check-out status for today</CardDescription>
+            <CardDescription>Latest updates from admin</CardDescription>
           </CardHeader>
           <CardContent>
-            {isCheckedIn ? (
-              <div className="space-y-4">
-                {/* Shift Badge */}
-                {todayAttendance?.shift && (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="gap-1">
-                      {todayAttendance.shift === 'Morning' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
-                      {todayAttendance.shift} Shift
-                    </Badge>
-                    {todayAttendance.isLate && <Badge className="bg-yellow-500">Late</Badge>}
-                    {todayAttendance.isEarlyLeave && <Badge className="bg-orange-500">Early Leave</Badge>}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center">
-                      <LogIn className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Check-in Time</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(todayAttendance.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+            <div className="space-y-4 max-h-60 overflow-y-auto">
+              {announcements.length > 0 ? (
+                announcements.map((announcement) => (
+                  <div
+                    key={announcement._id}
+                    className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-8 w-8 bg-primary">
+                        <AvatarFallback className="text-primary-foreground text-xs">A</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{announcement.title}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                          {announcement.description}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {new Date(announcement.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <Badge variant="default" className="bg-green-500">Active</Badge>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <Megaphone className="h-8 w-8 text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground text-sm">No announcements yet</p>
                 </div>
-
-                {isCheckedOut && (
-                  <>
-                    <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
-                          <LogOut className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Check-out Time</p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(todayAttendance.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant="secondary">Completed</Badge>
-                    </div>
-
-                    {/* Hours Worked */}
-                    <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center">
-                          <Clock className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Hours Worked</p>
-                          <p className={`text-sm ${(todayAttendance.hoursWorked || 0) >= 4 ? 'text-green-600' : 'text-red-500'}`}>
-                            {todayAttendance.hoursWorked?.toFixed(1) || 0}h
-                            {(todayAttendance.hoursWorked || 0) >= 4 && <CheckCircle2 className="w-3 h-3 inline ml-1" />}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge className={todayAttendance.status === 'Present' ? 'bg-green-500' : 'bg-yellow-500'}>
-                        {todayAttendance.status}
-                      </Badge>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <Clock className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <p className="text-muted-foreground">You haven't checked in today</p>
-                <p className="text-sm text-muted-foreground mt-1">Use the check-in button in the header</p>
-              </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -468,7 +418,7 @@ const Dashboard = () => {
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
-                
+
                 {/* ✅ ADDED: Summary stats below chart */}
                 <div className="grid grid-cols-1 gap-2 text-sm">
                   <div className="flex items-center gap-2">
@@ -490,45 +440,10 @@ const Dashboard = () => {
       </div>
 
       {/* Post Engagement Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Heart className="h-5 w-5" />
-            Post Engagement
-          </CardTitle>
-          <CardDescription>Likes and comments on your recent posts</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {postEngagementData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={postEngagementData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="name" className="text-xs" />
-                <YAxis />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="likes" fill="#ef4444" name="Likes" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="comments" fill="#8b5cf6" name="Comments" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12">
-              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No posts yet</p>
-              <p className="text-sm text-muted-foreground mt-1">Create your first post to see engagement stats</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
 
       {/* Weekly Hours & Announcements */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="lg:grid-cols-2 gap-6">
         {/* Weekly Hours Chart */}
         <Card>
           <CardHeader>
@@ -565,47 +480,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Admin Announcements */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Megaphone className="h-5 w-5" />
-              Admin Announcements
-            </CardTitle>
-            <CardDescription>Latest updates from admin</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4 max-h-[240px] overflow-y-auto">
-              {announcements.length > 0 ? (
-                announcements.map((announcement) => (
-                  <div
-                    key={announcement._id}
-                    className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-start gap-3">
-                      <Avatar className="h-8 w-8 bg-primary">
-                        <AvatarFallback className="text-primary-foreground text-xs">A</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{announcement.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                          {announcement.description}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {new Date(announcement.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <Megaphone className="h-8 w-8 text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground text-sm">No announcements yet</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+
       </div>
     </div>
   )
