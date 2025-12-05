@@ -4,6 +4,7 @@ import { AppSidebar } from '../app-sidebar'
 import { SiteHeader } from '../site-header'
 import { Outlet } from 'react-router-dom'
 import { Toaster } from "@/components/ui/sonner"
+import { BottomNav } from '../BottomNav'
 
 const UserLayout = () => {
     return (
@@ -15,11 +16,17 @@ const UserLayout = () => {
                 } as React.CSSProperties
             }
         >
-            <AppSidebar variant="inset" />
+            {/* Sidebar - hidden on mobile via CSS */}
+            <AppSidebar variant="inset" className="hidden md:flex" />
             <SidebarInset>
                 <SiteHeader />
-                <Outlet />
+                {/* Add bottom padding on mobile for BottomNav */}
+                <div className="pb-20 md:pb-0">
+                    <Outlet />
+                </div>
             </SidebarInset>
+            {/* Bottom Navigation - only visible on mobile */}
+            <BottomNav />
             <Toaster />
         </SidebarProvider>
     )
