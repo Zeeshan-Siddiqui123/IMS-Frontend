@@ -118,6 +118,8 @@ const Dashboard = () => {
         let allHistory: any[] = []
         let currentPage = 1
         let hasMoreData = true
+        let fetchedTotalHours = 0
+
 
         while (hasMoreData) {
           const historyRes = await attRepo.getUserHistory(user._id, currentPage, 100)
@@ -126,6 +128,11 @@ const Dashboard = () => {
           if (pageHistory.length === 0) {
             hasMoreData = false
           } else {
+            // Capture total hours from the first page response
+            if (currentPage === 1 && historyRes.totalHours !== undefined) {
+              fetchedTotalHours = historyRes.totalHours
+            }
+
             allHistory = [...allHistory, ...pageHistory]
 
             // Check if there are more pages
@@ -184,13 +191,17 @@ const Dashboard = () => {
         }
 
         setMyPosts(postsWithStats)
-        setTotalHours(likesTotal)
-        setTotalAnnouncements(commentsTotal)
+
+        // ✅ FIXED: Total Hours should be from attendance, not likes
+        setTotalHours(fetchedTotalHours || 0)
         setTotalPosts(userPosts.length)
 
         // Fetch admin announcements
         const announcementsRes = await postRepo.getAllPosts(1, 5)
         setAnnouncements(announcementsRes.data || [])
+
+        // Use available announcements count or default to 0
+        setTotalAnnouncements(announcementsRes?.pagination?.totalItems || announcementsRes?.data?.length || 0)
 
       } catch (err) {
         console.error("Error fetching dashboard data:", err)
