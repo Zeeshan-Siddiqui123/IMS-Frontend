@@ -20,10 +20,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { UserAvatar } from "@/components/UserAvatar"
-import { Check, LogOut, User, ChevronUp } from "lucide-react"
+import { Check, LogOut, User, ChevronUp, Download } from "lucide-react"
 import Logout from "@/auth/Logout"
 import { userRepo } from "../repositories/userRepo"
 import { useAuthStore } from "@/hooks/store/authStore"
+import { usePwaInstall } from "@/hooks/usePwaInstall"
 
 
 const data = {
@@ -37,10 +38,12 @@ const data = {
 export function AppSidebar(props) {
 
   const { user, setUser, isLoading, setLoading } = useAuthStore()
+  const { isInstallable, installPwa } = usePwaInstall()
 
   const triggerLogout = () => {
     document.getElementById("logoutBtn")?.click()
   }
+
 
   // Fetch User Profile
   React.useEffect(() => {
@@ -118,6 +121,16 @@ export function AppSidebar(props) {
               </DropdownMenuLabel>
 
               <DropdownMenuSeparator />
+
+              {isInstallable && (
+                <>
+                  <DropdownMenuItem onClick={installPwa} className="cursor-pointer">
+                    <Download className="mr-2 h-4 w-4" />
+                    <span>Install App</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
 
               <DropdownMenuItem asChild>
                 <Link to="/profile" className="cursor-pointer">
