@@ -122,7 +122,8 @@
 
   html,
   body {
-    overscroll-behavior-y: none;
+    /* Revert overscroll-behavior to avoid white screen issues */
+    /* overscroll-behavior-y: none; */
   }
 
   body {
