@@ -17,6 +17,7 @@ import { toast } from "sonner"
 import { Edit3, Camera, Loader2 } from "lucide-react"
 import { userRepo } from "../repositories/userRepo"
 import { useAuthStore } from "@/hooks/store/authStore"
+import { UserAvatar } from "../components/UserAvatar"
 
 export default function ProfileShadCN() {
   const { user: authUser, setUser: setAuthUser } = useAuthStore()
@@ -174,10 +175,11 @@ export default function ProfileShadCN() {
                     <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
                   </div>
                 ) : (
-                  <img
-                    src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || "User"}&background=6366f1&color=fff`}
-                    alt="User"
-                    className="w-full h-full object-cover"
+                  <UserAvatar
+                    src={user?.avatar}
+                    name={user?.name}
+                    className="w-full h-full border-0"
+                    fallbackColor="bg-indigo-500"
                   />
                 )}
               </div>

@@ -8,7 +8,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "./UserAvatar";
 import {
     MoreVertical,
     Edit,
@@ -80,12 +80,13 @@ export const CommentItem: React.FC<CommentItemProps> = ({
     return (
         <div className="space-y-3">
             <div className="flex gap-3">
-                <Avatar className="h-9 w-9 border-2 border-background shadow-sm flex-shrink-0">
-                    <AvatarImage src={comment.user?.avatar} alt={comment.user?.name} />
-                    <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white text-sm font-semibold">
-                        {comment.user?.name?.charAt(0).toUpperCase() || "U"}
-                    </AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                    src={comment.user?.avatar}
+                    name={comment.user?.name}
+                    className="h-9 w-9 border-2 border-background shadow-sm flex-shrink-0"
+                    fallbackColor="bg-gradient-to-br from-violet-500 to-purple-600"
+                    size="sm"
+                />
 
                 <div className="flex-1 space-y-2 min-w-0">
                     <div className="flex items-center justify-between gap-2">

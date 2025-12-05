@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "./UserAvatar";
 import {
   MessageSquare,
   User,
@@ -127,11 +127,12 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({ postId }) => {
 
       {/* Add Comment Input */}
       <div className="flex gap-3 items-start">
-        <Avatar className="h-9 w-9 border-2 border-background shadow-sm">
-          <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white text-sm font-semibold">
-            {user?.name?.charAt(0).toUpperCase() || <User className="w-4 h-4" />}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar
+          src={user?.avatar}
+          name={user?.name}
+          className="h-9 w-9 border-2 border-background shadow-sm"
+          fallbackColor="bg-gradient-to-br from-violet-500 to-purple-600"
+        />
 
         <div className="flex gap-2 items-center w-full justify-between">
           <input

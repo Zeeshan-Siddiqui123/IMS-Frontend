@@ -33,7 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "./UserAvatar";
 
 import { Clock, Edit, ExternalLink, Heart, ImagePlus, MessageSquare, MoreVertical, Trash2, X } from "lucide-react";
 import { CommentsSection } from "./CommentsSection";
@@ -233,19 +233,15 @@ export const PostCard = ({
         <CardHeader className="space-y-0">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <Avatar
-                className={`h-11 w-11 border-2 ${isAdmin
-                  ? "border-blue-200 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600"
-                  : "border-emerald-200 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600"
-                  }`}
-              >
-                {authorAvatar ? (
-                  <AvatarImage src={authorAvatar} alt={displayName} />
-                ) : null}
-                <AvatarFallback className="text-white font-bold text-sm">
-                  {avatarText}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                src={authorAvatar}
+                name={displayName}
+                className="h-11 w-11"
+                fallbackColor={isAdmin
+                  ? "bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600"
+                  : "bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600"
+                }
+              />
 
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">

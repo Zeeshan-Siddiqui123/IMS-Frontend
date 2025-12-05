@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/UserAvatar"
 import { userRepo } from "../repositories/userRepo"
 import { attRepo } from "../repositories/attRepo"
 import { postRepo } from "../repositories/postRepo"
@@ -360,9 +360,10 @@ const Dashboard = () => {
                     className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex items-start gap-3">
-                      <Avatar className="h-8 w-8 bg-primary">
-                        <AvatarFallback className="text-primary-foreground text-xs">A</AvatarFallback>
-                      </Avatar>
+                      <UserAvatar
+                        className="h-8 w-8 bg-primary"
+                        fallbackColor="bg-primary"
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{announcement.title}</p>
                         <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
@@ -438,9 +439,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Post Engagement Chart */}
-
 
       {/* Weekly Hours & Announcements */}
       <div className="lg:grid-cols-2 gap-6">
