@@ -28,7 +28,7 @@ export default defineConfig({
             type: 'image/png'
           }
         ],
-        display: 'fullscreen',
+        display: 'standalone',
         background_color: '#ffffff',
         orientation: 'portrait'
       }
