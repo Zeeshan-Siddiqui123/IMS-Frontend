@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { CheckCircle2, Clock, Sun, Moon, AlertCircle, XCircle } from "lucide-react"
+import { CheckCircle2, Clock, Sun, Moon, AlertCircle, XCircle, Loader2 } from "lucide-react"
 import { attRepo, AttendanceStatus, AttendanceSettings } from "@/repositories/attRepo"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface Props {
   userId: string
@@ -83,7 +84,12 @@ const MarkAttendance: React.FC<Props> = ({ userId }) => {
   }
 
   if (isFetching) {
-    return <div className="text-sm text-muted-foreground">Loading...</div>
+    return (
+      <div className="flex gap-2 items-center">
+        <Skeleton className="h-8 w-20 rounded-md" />
+        <Skeleton className="h-5 w-16 rounded-full" />
+      </div>
+    )
   }
 
   return (
@@ -127,7 +133,7 @@ const MarkAttendance: React.FC<Props> = ({ userId }) => {
               <span className="animate-ping absolute h-full w-full rounded-full bg-green-300 opacity-75"></span>
               <span className="relative rounded-full h-2 w-2 bg-green-300"></span>
             </span>
-            {isLoading ? "..." : "Check In"}
+            {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Check In"}
           </Button>
         )}
 
@@ -143,7 +149,7 @@ const MarkAttendance: React.FC<Props> = ({ userId }) => {
               <span className="animate-ping absolute h-full w-full rounded-full bg-red-300 opacity-75"></span>
               <span className="relative rounded-full h-2 w-2 bg-red-300"></span>
             </span>
-            {isLoading ? "..." : "Check Out"}
+            {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Check Out"}
           </Button>
         )}
 
