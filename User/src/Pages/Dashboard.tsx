@@ -2,12 +2,11 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { UserAvatar } from "@/components/UserAvatar"
 import { userRepo } from "../repositories/userRepo"
 import { attRepo } from "../repositories/attRepo"
 import { postRepo } from "../repositories/postRepo"
-import { likeRepo } from "../repositories/likeRepo"
-import { commentRepo } from "../repositories/commentRepo"
 import { useAuthStore } from "@/hooks/store/authStore"
 import {
   CalendarCheck,
@@ -159,42 +158,30 @@ const Dashboard = () => {
           late: lateCount
         })
 
-        // Fetch user's posts
-        const postsRes = await postRepo.getAllUsersPosts(1, 100)
-        const userPosts = (postsRes.data || []).filter((p: any) => p.user === user._id || p.user?._id === user._id)
+        // ✅ OPTIMIZED: Fetch user's posts with stats in single query (no loops!)
+        const postsRes = await postRepo.getUserPostsWithStats(1, 100, user._id);
+        const userPosts = postsRes.data || [];
 
-        // ✅ CHANGED: Fetch stats for TOP 10 posts only (not all posts)
-        let likesTotal = 0
-        let commentsTotal = 0
-        const postsWithStats: PostStat[] = []
+        // Calculate totals from the aggregated data
+        let likesTotal = 0;
+        let commentsTotal = 0;
+        const postsWithStats: PostStat[] = userPosts.slice(0, 10).map((post: any) => {
+          likesTotal += post.likeCount || 0;
+          commentsTotal += post.commentCount || 0;
+          return {
+            _id: post._id,
+            title: post.title || 'Untitled',
+            likeCount: post.likeCount || 0,
+            commentCount: post.commentCount || 0,
+            createdAt: post.createdAt
+          };
+        });
 
-        for (const post of userPosts.slice(0, 10)) {
-          try {
-            const likesRes = await likeRepo.getLikesByPost(post._id, 1, 1)
-            const commentsRes = await commentRepo.getCommentsByPost(post._id, 1, 1)
-            const likeCount = likesRes.pagination?.totalItems || 0
-            const commentCount = commentsRes.pagination?.totalItems || 0
-
-            likesTotal += likeCount
-            commentsTotal += commentCount
-
-            postsWithStats.push({
-              _id: post._id,
-              title: post.title || 'Untitled',
-              likeCount,
-              commentCount,
-              createdAt: post.createdAt
-            })
-          } catch (e) {
-            console.error('Error fetching post stats:', e)
-          }
-        }
-
-        setMyPosts(postsWithStats)
+        setMyPosts(postsWithStats);
 
         // ✅ FIXED: Total Hours should be from attendance, not likes
-        setTotalHours(fetchedTotalHours || 0)
-        setTotalPosts(userPosts.length)
+        setTotalHours(fetchedTotalHours || 0);
+        setTotalPosts(userPosts.length);
 
         // Fetch admin announcements
         const announcementsRes = await postRepo.getAllPosts(1, 5)
@@ -268,103 +255,150 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {todayAttendance?.shift && (
-            <Badge variant="outline" className="gap-1">
-              {todayAttendance.shift === 'Morning' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
-              {todayAttendance.shift}
-            </Badge>
-          )}
-          {isCheckedIn ? (
-            <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-              <CheckCircle2 className="w-3 h-3 mr-1" />
-              Checked In
-            </Badge>
+          {dashboardLoading ? (
+            // Skeleton for badges
+            <>
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-24 rounded-full" />
+            </>
           ) : (
-            <Badge variant="secondary">
-              <XCircle className="w-3 h-3 mr-1" />
-              Not Checked In
-            </Badge>
+            <>
+              {todayAttendance?.shift && (
+                <Badge variant="outline" className="gap-1">
+                  {todayAttendance.shift === 'Morning' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+                  {todayAttendance.shift}
+                </Badge>
+              )}
+              {isCheckedIn ? (
+                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  Checked In
+                </Badge>
+              ) : (
+                <Badge variant="secondary">
+                  <XCircle className="w-3 h-3 mr-1" />
+                  Not Checked In
+                </Badge>
+              )}
+            </>
           )}
         </div>
       </div>
 
       {/* Stats Cards */}
-      < div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" >
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Total Posts</p>
-                <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalPosts}</h3>
-              </div>
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {dashboardLoading ? (
+          // Skeleton loaders for stats
+          <>
+            {[...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <Skeleton className="h-3 w-16" />
+                      <Skeleton className="h-7 w-12" />
+                    </div>
+                    <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : (
+          <>
+            <Card>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Total Posts</p>
+                    <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalPosts}</h3>
+                  </div>
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Total Hours</p>
-                <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalHours}</h3>
-              </div>
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                <TimerIcon className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Total Hours</p>
+                    <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalHours}</h3>
+                  </div>
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <TimerIcon className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Announcements</p>
-                <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalAnnouncements}</h3>
-              </div>
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <Megaphone className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Announcements</p>
+                    <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalAnnouncements}</h3>
+                  </div>
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                    <Megaphone className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Attendance Rate</p>
-                <h3 className="text-xl sm:text-2xl font-bold mt-1">
-                  {attendanceHistory.length > 0
-                    ? Math.round((attendanceStats.present / attendanceHistory.length) * 100)
-                    : 0}%
-                </h3>
-              </div>
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <CalendarCheck className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div >
+            <Card>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Attendance Rate</p>
+                    <h3 className="text-xl sm:text-2xl font-bold mt-1">
+                      {attendanceHistory.length > 0
+                        ? Math.round((attendanceStats.present / attendanceHistory.length) * 100)
+                        : 0}%
+                    </h3>
+                  </div>
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <CalendarCheck className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
 
       {/* Charts Row */}
-      < div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6" >
-        {/* Today's Attendance Card */}
-        < Card >
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* Admin Announcements Card */}
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Megaphone className="h-5 w-5" />
               Admin Announcements
             </CardTitle>
-            <CardDescription>Latest updates from admin</CardDescription>
+            <CardDescription>
+              {dashboardLoading ? <Skeleton className="h-4 w-36" /> : "Latest updates from admin"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4 max-h-60 overflow-y-auto">
-              {announcements.length > 0 ? (
+              {dashboardLoading ? (
+                // Skeleton loaders for announcements
+                [...Array(3)].map((_, i) => (
+                  <div key={i} className="p-3 rounded-lg border">
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : announcements.length > 0 ? (
                 announcements.map((announcement) => (
                   <div
                     key={announcement._id}
@@ -395,21 +429,36 @@ const Dashboard = () => {
               )}
             </div>
           </CardContent>
-        </Card >
+        </Card>
 
-        {/* ✅ UPDATED: Attendance Pie Chart with total count */}
-        < Card >
+        {/* Attendance Pie Chart with total count */}
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
               Attendance Overview
             </CardTitle>
             <CardDescription>
-              Your overall attendance distribution ({totalAttendanceRecords} total records)
+              {dashboardLoading ? (
+                <Skeleton className="h-4 w-40" />
+              ) : (
+                <>Your overall attendance distribution ({totalAttendanceRecords} total records)</>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {attendancePieData.length > 0 ? (
+            {dashboardLoading ? (
+              // Skeleton for pie chart
+              <div className="space-y-4">
+                <div className="flex items-center justify-center h-[250px]">
+                  <Skeleton className="h-40 w-40 rounded-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </div>
+            ) : attendancePieData.length > 0 ? (
               <div className="space-y-4">
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
@@ -431,12 +480,13 @@ const Dashboard = () => {
                   </PieChart>
                 </ResponsiveContainer>
 
-                {/* ✅ ADDED: Summary stats below chart */}
+                {/* Summary stats below chart */}
                 <div className="grid grid-cols-1 gap-2 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-green-500"></div>
                     <span className="text-muted-foreground">Present: {attendanceStats.present}</span>
-                  </div> <div className="flex items-center gap-2">
+                  </div>
+                  <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                     <span className="text-muted-foreground">Late: {attendanceStats.late}</span>
                   </div>
@@ -448,13 +498,13 @@ const Dashboard = () => {
               </div>
             )}
           </CardContent>
-        </Card >
-      </div >
+        </Card>
+      </div>
 
-      {/* Weekly Hours & Announcements */}
-      < div className="lg:grid-cols-2 gap-6" >
+      {/* Weekly Hours */}
+      <div className="lg:grid-cols-2 gap-6">
         {/* Weekly Hours Chart */}
-        < Card >
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
@@ -463,7 +513,19 @@ const Dashboard = () => {
             <CardDescription>Hours worked in the last 7 days</CardDescription>
           </CardHeader>
           <CardContent>
-            {weeklyAttendanceData.length > 0 ? (
+            {dashboardLoading ? (
+              // Skeleton for area chart
+              <div className="space-y-3">
+                <div className="flex items-end justify-between h-[200px] gap-2">
+                  {[...Array(7)].map((_, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                      <Skeleton className="w-full" style={{ height: `${Math.random() * 100 + 50}px` }} />
+                      <Skeleton className="h-3 w-8" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : weeklyAttendanceData.length > 0 ? (
               <ResponsiveContainer width="100%" height={200}>
                 <AreaChart data={weeklyAttendanceData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -486,11 +548,8 @@ const Dashboard = () => {
               </div>
             )}
           </CardContent>
-        </Card >
-
-        {/* Admin Announcements */}
-
-      </div >
+        </Card>
+      </div>
     </div >
   )
 }

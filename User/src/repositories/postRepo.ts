@@ -17,6 +17,14 @@ export class PostRepo {
     return response.data;
   }
 
+  // ✅ OPTIMIZED: Get user posts with like/comment counts in single query
+  async getUserPostsWithStats(page: number = 1, limit: number = 10, userId?: string) {
+    const response = await api.get("/api/user/getuserpost/stats", {
+      params: { page, limit, userId },
+    });
+    return response.data;
+  }
+
   // Get single post by ID (Admin)
   async getPostById(id: string) {
     const response = await api.get(`/api/admin/getpost/${id}`);
