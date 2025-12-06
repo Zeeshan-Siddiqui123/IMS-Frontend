@@ -200,15 +200,9 @@ const Dashboard = () => {
     fetchDashboardData()
   }, [user?._id])
 
-  if (isLoading || !user) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    )
+  // Only block if no user - otherwise show skeleton loading
+  if (!user) {
+    return null // Let PrivateRoute handle the redirect
   }
 
   // Chart colors
@@ -375,8 +369,17 @@ const Dashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Megaphone className="h-5 w-5" />
-              Admin Announcements
+              {dashboardLoading ? (
+                <>
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-5 w-36" />
+                </>
+              ) : (
+                <>
+                  <Megaphone className="h-5 w-5" />
+                  Admin Announcements
+                </>
+              )}
             </CardTitle>
             <CardDescription>
               {dashboardLoading ? <Skeleton className="h-4 w-36" /> : "Latest updates from admin"}
@@ -435,12 +438,21 @@ const Dashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Attendance Overview
+              {dashboardLoading ? (
+                <>
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-5 w-36" />
+                </>
+              ) : (
+                <>
+                  <TrendingUp className="h-5 w-5" />
+                  Attendance Overview
+                </>
+              )}
             </CardTitle>
             <CardDescription>
               {dashboardLoading ? (
-                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-4 w-56" />
               ) : (
                 <>Your overall attendance distribution ({totalAttendanceRecords} total records)</>
               )}
@@ -507,10 +519,21 @@ const Dashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Weekly Hours
+              {dashboardLoading ? (
+                <>
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-5 w-28" />
+                </>
+              ) : (
+                <>
+                  <Clock className="h-5 w-5" />
+                  Weekly Hours
+                </>
+              )}
             </CardTitle>
-            <CardDescription>Hours worked in the last 7 days</CardDescription>
+            <CardDescription>
+              {dashboardLoading ? <Skeleton className="h-4 w-44" /> : "Hours worked in the last 7 days"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {dashboardLoading ? (
