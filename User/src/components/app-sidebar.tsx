@@ -45,22 +45,6 @@ export function AppSidebar(props) {
   }
 
 
-  // Fetch User Profile
-  React.useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setLoading(true)
-        const res = await userRepo.profile()
-        setUser(res.user)
-      } catch (err) {
-        console.log("Profile error:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchProfile()
-  }, [setUser, setLoading])
-
   return (
     <Sidebar collapsible="offcanvas" {...props}>
 
