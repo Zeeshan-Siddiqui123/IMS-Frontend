@@ -12,6 +12,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog";
+import { Checkbox } from "../components/ui/checkbox";
 import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Link, useNavigate } from "react-router-dom";
@@ -40,6 +49,9 @@ const signUpSchema = z.object({
     }
     return age > 12;
   }, "You must be greater than 12 years old"),
+  termsAccepted: z.boolean().refine(val => val === true, {
+    message: "You must accept the terms and conditions",
+  }),
 });
 
 type SignUpFormValues = z.infer<typeof signUpSchema>;
@@ -74,6 +86,7 @@ const SignUp: React.FC = () => {
       gender: "",
       shift: "",
       dob: "", // Added default value
+      termsAccepted: false,
     },
   });
 
@@ -358,6 +371,61 @@ const SignUp: React.FC = () => {
                     {errors.shift && <p className="text-red-500 text-xs">{errors.shift.message}</p>}
                   </div>
                 </div>
+
+                <div className="flex items-center space-x-2">
+                  <Controller
+                    name="termsAccepted"
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        id="terms"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
+                  />
+                  <Label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    I accept the {" "}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <span className="text-primary underline cursor-pointer">terms and conditions & privacy policy</span>
+                      </DialogTrigger>
+                      <DialogContent className="max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Terms and Conditions & Privacy Policy</DialogTitle>
+                          <DialogDescription>
+                            Please read our terms and conditions and privacy policy carefully.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 text-sm text-gray-700 dark:text-gray-300">
+                          <section>
+                            <h3 className="font-semibold text-lg mb-2">Incubation Rules</h3>
+                            <ul className="list-disc list-inside space-y-1">
+                              <li><strong>Attendance:</strong> A minimum of 80% attendance is mandatory for all incubatees. Failure to meet this requirement may result in termination from the program.</li>
+                              <li><strong>Conduct:</strong> Incubatees are expected to maintain professional behavior. Any form of harassment, discrimination, or disrespectful behavior towards mentors, staff, or peers will not be tolerated.</li>
+                              <li><strong>Project Submission:</strong> All assigned projects and tasks must be submitted within the stipulated deadlines. Continuous failure to meet deadlines may lead to disciplinary action.</li>
+                              <li><strong>Intellectual Property:</strong> Respect for intellectual property rights is paramount. Any plagiarism or unauthorized use of code/assets is strictly prohibited.</li>
+                              <li><strong>Facility Usage:</strong> Incubatees must use the incubation center's facilities and equipment responsibly. Any damages caused due to negligence will be recovered from the responsible individual.</li>
+                            </ul>
+                          </section>
+
+                          <section>
+                            <h3 className="font-semibold text-lg mb-2">Privacy Policy</h3>
+                            <p className="mb-2">We value your privacy and are committed to protecting your personal data. This policy outlines how we collect, use, and safeguard your information.</p>
+                            <ul className="list-disc list-inside space-y-1">
+                              <li><strong>Information Collection:</strong> We collect personal information such as name, contact details, CNIC, and educational background for registration and administrative purposes.</li>
+                              <li><strong>Data Usage:</strong> Your data is used solely for managing the incubation program, tracking progress, and communication. We do not sell or trade your personal information.</li>
+                              <li><strong>Software Privacy:</strong> The software and tools provided during the incubation are for educational and development purposes. Users must not attempt to reverse engineer or exploit the platform.</li>
+                              <li><strong>Data Security:</strong> We implement industry-standard security measures to protect your data from unauthorized access, alteration, or disclosure.</li>
+                              <li><strong>Third-Party Sharing:</strong> We do not share your information with third parties unless required by law or with your explicit consent for specific opportunities (e.g., job placements).</li>
+                            </ul>
+                          </section>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </Label>
+                </div>
+                {errors.termsAccepted && <p className="text-red-500 text-xs">{errors.termsAccepted.message}</p>}
 
                 <Button className="w-full" type="submit" disabled={isSubmitting}>
                   Create Account
