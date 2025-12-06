@@ -18,6 +18,8 @@ const MarkAttendance: React.FC<Props> = ({ userId }) => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!userId) return
+
       try {
         setIsFetching(true)
         const [statusRes, shiftRes] = await Promise.all([

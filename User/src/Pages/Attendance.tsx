@@ -27,11 +27,7 @@ const Attendance: React.FC = () => {
   // Fetch today's status and shift info
   useEffect(() => {
     const fetchData = async () => {
-      console.log("📋 Attendance: user =", user)
-      console.log("📋 Attendance: user._id =", user?._id)
-
       if (!user?._id) {
-        console.log("⚠️ user._id is missing, skipping API call")
         setIsLoading(false);
         return;
       }
