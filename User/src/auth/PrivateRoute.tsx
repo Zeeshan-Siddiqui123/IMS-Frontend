@@ -15,17 +15,24 @@ const PrivateRoute = ({ children }: PrivateRouteProps) => {
 
   useEffect(() => {
     const verifyAuth = async () => {
+      console.log("🔐 PrivateRoute: isAuthenticated =", isAuthenticated)
+
       if (isAuthenticated) {
+        console.log("✅ Already authenticated, skipping API call")
         setIsChecking(false)
         return
       }
 
+      console.log("⏳ Not authenticated, calling profile API...")
       try {
         const res = await userRepo.profile()
+        console.log("📦 Profile API Response:", res)
+        console.log("👤 User from response:", res.user)
         setUser(res.user)
+        console.log("✅ User set successfully")
         setIsChecking(false)
       } catch (err) {
-        console.error("Auth verification failed:", err)
+        console.error("❌ Auth verification failed:", err)
         setLoading(false)
         setIsChecking(false)
       }
@@ -33,6 +40,8 @@ const PrivateRoute = ({ children }: PrivateRouteProps) => {
 
     verifyAuth()
   }, [isAuthenticated, setUser, setLoading])
+
+  console.log("🎯 PrivateRoute render: isChecking =", isChecking, "isAuthenticated =", isAuthenticated)
 
   // Show skeleton layout while checking auth (not full screen spinner)
   if (isChecking) {
