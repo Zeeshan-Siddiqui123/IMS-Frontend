@@ -92,7 +92,7 @@ const Dashboard = () => {
       }
       try {
         const res = await userRepo.profile()
-        setUser(res.data)
+        setUser(res.user)
       } catch (err: any) {
         console.error("Failed to fetch user:", err)
         setLoading(false)
