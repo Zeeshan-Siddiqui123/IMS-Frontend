@@ -84,6 +84,23 @@ const Dashboard = () => {
     late: 0
   })
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (user) {
+        setLoading(false)
+        return
+      }
+      try {
+        const res = await userRepo.profile()
+        setUser(res.user)
+      } catch (err: any) {
+        console.error("Failed to fetch user:", err)
+        setLoading(false)
+      }
+    }
+    fetchUser()
+  }, [user, setUser, setLoading])
+
   // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
