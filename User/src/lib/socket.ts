@@ -15,7 +15,7 @@ class SocketService {
         // Socket.IO will automatically send httpOnly cookies with the handshake
         // Backend will extract the token from cookies or auth
         // Also try to get token from localStorage for cross-origin Vercel deployment
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 
         this.socket = io(SOCKET_URL, {
             withCredentials: true, // This ensures cookies are sent

@@ -1,32 +1,84 @@
 import React, { useEffect, useState } from "react";
-import { Select, Radio } from "antd";
 import { toast } from "sonner";
 import { CiUnread, CiRead } from "react-icons/ci";
 import { userRepo } from "../repositories/userRepo";
 import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Link, useNavigate } from "react-router-dom";
+import authBg from "@/assets/auth-bg.png";
+import { useForm, Controller } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-const { Option } = Select;
+const signUpSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  bq_id: z.string().min(1, "BQ ID is required"),
+  email: z.string().email({ message: "Invalid email address" }),
+  phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
+  CNIC: z.string().regex(/^\d{5}-\d{7}-\d{1}$/, "CNIC must be in format XXXXX-XXXXXXX-X"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  course: z.string().min(1, "Course is required"),
+  gender: z.string().min(1, "Gender is required"),
+  shift: z.string().min(1, "Shift is required"),
+  dob: z.string().refine((val) => {
+    const dobDate = new Date(val);
+    const today = new Date();
+    let age = today.getFullYear() - dobDate.getFullYear();
+    const m = today.getMonth() - dobDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
+      age--;
+    }
+    return age > 12;
+  }, "You must be greater than 12 years old"),
+});
+
+type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 const SignUp: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [courses, setCourses] = useState<string[]>([]);
   const [genders, setGenders] = useState<string[]>([]);
   const [shifts, setShifts] = useState<string[]>([]);
-  const [formData, setFormData] = useState({
-    name: "",
-    bq_id: "",
-    email: "",
-    password: "",
-    phone: "",
-    CNIC: "",
-    course: "",
-    gender: "",
-    shift: "",
-  });
 
   const navigate = useNavigate();
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    setError, // Added setError
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpSchema),
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      bq_id: "",
+      email: "",
+      phone: "",
+      CNIC: "",
+      password: "",
+      course: "",
+      gender: "",
+      shift: "",
+      dob: "", // Added default value
+    },
+  });
+
+  const cnicValue = watch("CNIC");
+  const phoneValue = watch("phone");
 
   useEffect(() => {
     const fetchEnums = async () => {
@@ -42,82 +94,59 @@ const SignUp: React.FC = () => {
     fetchEnums();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-
-    if (name === "phone") {
-      // Remove all non-numeric characters
-      const cleaned = value.replace(/\D/g, "");
-
-      // Limit to 10 digits (after +92)
-      if (cleaned.length <= 10) {
-        setFormData((prev) => ({ ...prev, [name]: cleaned }));
+  // Phone masking/cleaning helper
+  useEffect(() => {
+    if (phoneValue) {
+      let cleaned = phoneValue.replace(/\D/g, "");
+      // Remove leading 0 if present (e.g. 0300 -> 300)
+      if (cleaned.startsWith("0")) {
+        cleaned = cleaned.substring(1);
       }
-    } else if (name === "CNIC") {
-      // Remove all non-numeric characters
-      const cleaned = value.replace(/\D/g, "");
+      cleaned = cleaned.slice(0, 10);
 
-      // Limit to 13 digits
-      if (cleaned.length <= 13) {
-        setFormData((prev) => ({ ...prev, [name]: cleaned }));
+      if (cleaned !== phoneValue) {
+        setValue("phone", cleaned);
       }
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
     }
-  };
+  }, [phoneValue, setValue]);
 
-  const handleSelectChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  // Format CNIC for display: XXXXX-XXXXXXX-X
-  const formatCNICDisplay = (cnic: string) => {
-    if (!cnic) return "";
-    const cleaned = cnic.replace(/\D/g, "");
-
+  // CNIC formatting helper
+  const formatCNIC = (value: string) => {
+    const cleaned = value.replace(/\D/g, "");
     if (cleaned.length <= 5) return cleaned;
-    if (cleaned.length <= 12) {
-      return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
-    }
+    if (cleaned.length <= 12) return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
     return `${cleaned.slice(0, 5)}-${cleaned.slice(5, 12)}-${cleaned.slice(12, 13)}`;
   };
 
-  // Get CNIC formatted for database (with dashes)
-  const getCNICForDB = (cnic: string) => {
-    const cleaned = cnic.replace(/\D/g, "");
-    if (cleaned.length === 13) {
-      return `${cleaned.slice(0, 5)}-${cleaned.slice(5, 12)}-${cleaned.slice(12, 13)}`;
+  useEffect(() => {
+    if (cnicValue) {
+      const formatted = formatCNIC(cnicValue);
+      if (formatted !== cnicValue && formatted.length <= 15) { // 13 digits + 2 dashes = 15 chars
+        setValue("CNIC", formatted);
+      }
     }
-    return cnic;
-  };
+  }, [cnicValue, setValue]);
 
-  const handleSubmit = async () => {
+
+  const onSubmit = async (data: SignUpFormValues) => {
     try {
-      // Format data before sending to backend
       const dataToSend = {
-        ...formData,
-        phone: formData.phone ? `92${formData.phone}` : "",
-        CNIC: getCNICForDB(formData.CNIC),
+        ...data,
+        phone: data.phone ? `92${data.phone}` : "",
+        // CNIC is already in correct format due to auto-formatting
       };
 
       await userRepo.addUser(dataToSend);
       toast.success("User registered successfully");
       navigate("/login");
-      setFormData({
-        name: "",
-        bq_id: "",
-        email: "",
-        password: "",
-        phone: "",
-        CNIC: "",
-        course: "",
-        gender: "",
-        shift: "",
-      });
-      setErrors({});
     } catch (error: any) {
       if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors);
+        const backendErrors = error.response.data.errors;
+        Object.keys(backendErrors).forEach((key) => {
+          // @ts-ignore
+          setError(key as keyof SignUpFormValues, { type: "server", message: backendErrors[key] });
+        });
+        toast.error("Registration failed. Please check the errors above.");
       } else {
         toast.error(error.response?.data?.message || "Registration failed");
       }
@@ -125,199 +154,226 @@ const SignUp: React.FC = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 mt-10 rounded-lg border shadow bg-white dark:bg-neutral-900">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">
-        Create Account
-      </h2>
-
-      <div className="space-y-4 mb-6">
-        {/* Input Fields */}
-        {[
-          { name: "name", label: "Full Name", type: "text", placeholder: "Enter your full name" },
-          { name: "bq_id", label: "BQ ID", type: "text", placeholder: "Enter your BQ ID" },
-          { name: "email", label: "Email", type: "email", placeholder: "Enter your email address" },
-        ].map((input) => (
-          <div key={input.name}>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {input.label}
-            </label>
-            <input
-              type={input.type}
-              name={input.name}
-              value={(formData as any)[input.name]}
-              onChange={handleChange}
-              placeholder={input.placeholder}
-              className={`block w-full rounded-md border px-3 py-2 text-gray-900 dark:text-white dark:bg-neutral-800 
-                focus:border-blue-600 focus:ring-blue-600 sm:text-sm
-                ${errors[input.name] ? "border-red-500" : "border-gray-300 dark:border-gray-600"}`}
-              autoComplete="off"
-            />
-            {errors[input.name] && (
-              <p className="text-red-500 text-xs mt-1">{errors[input.name]}</p>
-            )}
-          </div>
-        ))}
-
-        {/* Phone Number Field */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Phone Number
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-2.5 text-gray-900 dark:text-white font-medium">
-              +92
-            </span>
-            <input
-              type="text"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="3001234567"
-              maxLength={10}
-              className={`block w-full rounded-md border pl-14 pr-3 py-2 text-gray-900 dark:text-white dark:bg-neutral-800 
-                focus:border-blue-600 focus:ring-blue-600 sm:text-sm
-                ${errors.phone ? "border-red-500" : "border-gray-300 dark:border-gray-600"}`}
-              autoComplete="off"
-            />
-          </div>
-          {errors.phone && (
-            <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-          )}
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Format: +92XXXXXXXXXX (10 digits after +92)
-          </p>
-        </div>
-
-        {/* CNIC Field */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            CNIC
-          </label>
-          <input
-            type="text"
-            name="CNIC"
-            value={formatCNICDisplay(formData.CNIC)}
-            onChange={handleChange}
-            placeholder="12345-1234567-1"
-            maxLength={15}
-            className={`block w-full rounded-md border px-3 py-2 text-gray-900 dark:text-white dark:bg-neutral-800 
-              focus:border-blue-600 focus:ring-blue-600 sm:text-sm
-              ${errors.CNIC ? "border-red-500" : "border-gray-300 dark:border-gray-600"}`}
-            autoComplete="off"
-          />
-          {errors.CNIC && (
-            <p className="text-red-500 text-xs mt-1">{errors.CNIC}</p>
-          )}
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Format: XXXXX-XXXXXXX-X (13 digits)
-          </p>
-        </div>
-
-        {/* Password Field */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Password
-          </label>
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              className={`block w-full rounded-md border px-3 py-2 text-gray-900 dark:text-white dark:bg-neutral-800 
-                focus:border-blue-600 focus:ring-blue-600 sm:text-sm
-                ${errors.password ? "border-red-500" : "border-gray-300 dark:border-gray-600"}`}
-              autoComplete="off"
-            />
-            <span
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-2.5 text-gray-500 cursor-pointer"
-            >
-              {showPassword ? <CiUnread /> : <CiRead />}
-            </span>
-          </div>
-          {errors.password && (
-            <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-          )}
-        </div>
-
-        {/* Course Dropdown */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Course
-          </label>
-          <Select
-            value={formData.course || undefined}
-            onChange={(value) => handleSelectChange("course", value)}
-            placeholder="Select a course"
-            className="w-full"
-          >
-            {courses.map((c) => (
-              <Option key={c} value={c}>
-                {c}
-              </Option>
-            ))}
-          </Select>
-          {errors.course && (
-            <p className="text-red-500 text-xs mt-1">{errors.course}</p>
-          )}
-        </div>
-
-        {/* Gender Radio Buttons */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Gender
-          </label>
-          <Radio.Group
-            onChange={(e) => handleSelectChange("gender", e.target.value)}
-            value={formData.gender}
-          >
-            {genders.map((g) => (
-              <Radio key={g} value={g} className="mr-4">
-                {g}
-              </Radio>
-            ))}
-          </Radio.Group>
-          {errors.gender && (
-            <p className="text-red-500 text-xs mt-1">{errors.gender}</p>
-          )}
-        </div>
-
-        {/* Shift Radio Buttons */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Shift
-          </label>
-          <Radio.Group
-            onChange={(e) => handleSelectChange("shift", e.target.value)}
-            value={formData.shift}
-          >
-            {shifts.map((s) => (
-              <Radio key={s} value={s} className="mr-4">
-                {s}
-              </Radio>
-            ))}
-          </Radio.Group>
-          {errors.shift && (
-            <p className="text-red-500 text-xs mt-1">{errors.shift}</p>
-          )}
+    <div className="w-full h-screen lg:grid lg:grid-cols-2">
+      {/* Left Side - Image */}
+      <div className="hidden lg:block h-full relative">
+        <img
+          src={authBg}
+          alt="Authentication Background"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/20" /> {/* Overlay */}
+        <div className="absolute bottom-10 left-10 text-white z-10 p-6">
+          <h1 className="text-4xl font-bold mb-2">Join the Community</h1>
+          <p className="text-lg opacity-90">Start your journey with us today.</p>
         </div>
       </div>
 
-      <Button
-        className="w-full h-11 text-lg font-medium shadow-sm hover:shadow-md transition"
-        onClick={handleSubmit}
-      >
-        Sign Up
-      </Button>
+      {/* Right Side - Form */}
+      <div className="h-full overflow-y-auto bg-gray-50 dark:bg-neutral-950 p-4">
+        <div className="flex min-h-full items-center justify-center">
+          <Card className="w-full max-w-lg border-none shadow-none bg-transparent">
+            <CardHeader className="space-y-1 text-center lg:text-left p-0 mb-6">
+              <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+              <CardDescription>
+                Enter your details to register
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="John Doe"
+                      className={errors.name ? "border-red-500" : ""}
+                      {...register("name")}
+                    />
+                    {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bq_id">BQ ID</Label>
+                    <Input
+                      id="bq_id"
+                      placeholder="BQ-123"
+                      className={errors.bq_id ? "border-red-500" : ""}
+                      {...register("bq_id")}
+                    />
+                    {errors.bq_id && <p className="text-red-500 text-xs">{errors.bq_id.message}</p>}
+                  </div>
+                </div>
 
-      <p className="text-center mt-3 text-gray-700 dark:text-gray-300">
-        Already have an account?{" "}
-        <Link to="/login" className="text-blue-600">
-          <u>Login</u>
-        </Link>
-      </p>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    className={errors.email ? "border-red-500" : ""}
+                    {...register("email")}
+                  />
+                  {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-sm font-medium text-gray-500 z-10">+92</span>
+                      <Input
+                        id="phone"
+                        className={`pl-10 ${errors.phone ? "border-red-500" : ""}`}
+                        placeholder="3001234567"
+                        maxLength={10}
+                        {...register("phone")}
+                      />
+                    </div>
+                    {errors.phone && <p className="text-red-500 text-xs">{errors.phone.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="CNIC">CNIC</Label>
+                    <Input
+                      id="CNIC"
+                      placeholder="12345-1234567-1"
+                      maxLength={15}
+                      className={errors.CNIC ? "border-red-500" : ""}
+                      {...register("CNIC")}
+                    />
+                    {errors.CNIC && <p className="text-red-500 text-xs">{errors.CNIC.message}</p>}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a password"
+                      className={errors.password ? "border-red-500 pr-10" : "pr-10"}
+                      {...register("password")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-2.5 text-gray-500 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300"
+                    >
+                      {showPassword ? <CiUnread size={20} /> : <CiRead size={20} />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dob">Date of Birth</Label>
+                  <Input
+                    id="dob"
+                    type="date"
+                    className={errors.dob ? "border-red-500" : ""}
+                    {...register("dob")}
+                  />
+                  {errors.dob && <p className="text-red-500 text-xs">{errors.dob.message}</p>}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Course</Label>
+                    <Controller
+                      name="course"
+                      control={control}
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger className={errors.course ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {courses.map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {c}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.course && <p className="text-red-500 text-xs">{errors.course.message}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Gender</Label>
+                    <Controller
+                      name="gender"
+                      control={control}
+                      render={({ field }) => (
+                        <ToggleGroup
+                          type="single"
+                          value={field.value}
+                          onValueChange={(value) => {
+                            if (value) field.onChange(value);
+                          }}
+                          className="justify-start gap-4"
+                        >
+                          {genders.map((g) => (
+                            <ToggleGroupItem
+                              key={g}
+                              value={g}
+                              className="flex-1 rounded-md border border-input data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                            >
+                              {g}
+                            </ToggleGroupItem>
+                          ))}
+                        </ToggleGroup>
+                      )}
+                    />
+                    {errors.gender && <p className="text-red-500 text-xs">{errors.gender.message}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Shift</Label>
+                    <Controller
+                      name="shift"
+                      control={control}
+                      render={({ field }) => (
+                        <ToggleGroup
+                          type="single"
+                          value={field.value}
+                          onValueChange={(value) => {
+                            if (value) field.onChange(value);
+                          }}
+                          className="justify-start gap-4"
+                        >
+                          {shifts.map((s) => (
+                            <ToggleGroupItem
+                              key={s}
+                              value={s}
+                              className="flex-1 rounded-md border border-input data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                            >
+                              {s}
+                            </ToggleGroupItem>
+                          ))}
+                        </ToggleGroup>
+                      )}
+                    />
+                    {errors.shift && <p className="text-red-500 text-xs">{errors.shift.message}</p>}
+                  </div>
+                </div>
+
+                <Button className="w-full" type="submit" disabled={isSubmitting}>
+                  Create Account
+                </Button>
+              </form>
+
+              <div className="text-center text-sm">
+                Already have an account?{" "}
+                <Link to="/login" className="underline text-primary hover:text-primary/90">
+                  Login
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

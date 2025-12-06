@@ -1,6 +1,5 @@
 import * as React from "react"
 import { Link } from 'react-router-dom'
-import { IconDashboard, IconChartBar, IconInnerShadowTop } from "@tabler/icons-react"
 import { APPNAME } from "@/lib/constant"
 import { NavMain } from "@/components/nav-main"
 import {
@@ -20,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { UserAvatar } from "@/components/UserAvatar"
-import { Check, LogOut, User, ChevronUp, Download, Send } from "lucide-react"
+import { Home, Send, FileText, CalendarCheck, Check, LogOut, ChevronUp, Download, User } from "lucide-react"
 import Logout from "@/auth/Logout"
 import { userRepo } from "../repositories/userRepo"
 import { useAuthStore } from "@/hooks/store/authStore"
@@ -29,10 +28,10 @@ import { usePwaInstall } from "@/hooks/usePwaInstall"
 
 const data = {
   navMain: [
-    { title: "Dashboard", url: "/", icon: IconDashboard },
+    { title: "Home", url: "/", icon: Home },
     { title: "Direct", url: "/direct", icon: Send },
-    { title: "Post", url: "/posts", icon: IconChartBar },
-    { title: "Attendance", url: "/attendance", icon: Check },
+    { title: "Posts", url: "/posts", icon: FileText },
+    { title: "Attendance", url: "/attendance", icon: CalendarCheck },
   ],
 }
 
@@ -70,7 +69,7 @@ export function AppSidebar(props) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <Link to="/">
-                <IconInnerShadowTop className="!size-5" />
+                <Home className="!size-5" />
                 <span className="text-base font-semibold">{APPNAME}</span>
               </Link>
             </SidebarMenuButton>
