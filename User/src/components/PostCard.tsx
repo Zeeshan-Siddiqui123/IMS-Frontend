@@ -33,6 +33,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerClose,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { UserAvatar } from "./UserAvatar";
 
 import { Clock, Edit, ExternalLink, Heart, ImagePlus, MessageSquare, MoreVertical, Trash2, X } from "lucide-react";
@@ -227,10 +238,100 @@ export const PostCard = ({
     }
   };
 
+  const isMobile = useIsMobile();
+
+  const renderEditForm = () => (
+    <div className="space-y-4 py-4">
+      <div className="space-y-2">
+        <Label htmlFor="edit-title">Title</Label>
+        <Input
+          id="edit-title"
+          value={editForm.title}
+          onChange={(e) =>
+            setEditForm({ ...editForm, title: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="edit-description">Description</Label>
+        <Textarea
+          id="edit-description"
+          rows={4}
+          value={editForm.description}
+          onChange={(e) =>
+            setEditForm({ ...editForm, description: e.target.value })
+          }
+          className="resize-none"
+        />
+      </div>
+
+      {/* Edit Media Section */}
+      <div className="space-y-2">
+        <Label>Media</Label>
+        {editImagePreview ? (
+          <div className="relative rounded-lg overflow-hidden border">
+            {editImageFile?.type.startsWith('video/') || (typeof editImagePreview === 'string' && isVideo(editImagePreview)) ? (
+              <video
+                src={editImagePreview}
+                controls
+                className="w-full h-32 object-cover"
+              />
+            ) : (
+              <img
+                src={editImagePreview}
+                alt="Preview"
+                className="w-full h-32 object-cover"
+              />
+            )}
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              className="absolute top-2 right-2 h-7 w-7"
+              onClick={removeEditImage}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        ) : (
+          <div
+            className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
+            onClick={() => editFileInputRef.current?.click()}
+          >
+            <ImagePlus className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+            <p className="text-xs text-muted-foreground">
+              Click to upload media
+            </p>
+          </div>
+        )}
+        <input
+          ref={editFileInputRef}
+          type="file"
+          accept="image/*,video/*"
+          onChange={handleEditImageChange}
+          className="hidden"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="edit-link">Link (Optional)</Label>
+        <Input
+          id="edit-link"
+          value={editForm.link}
+          onChange={(e) =>
+            setEditForm({ ...editForm, link: e.target.value })
+          }
+          placeholder="https://..."
+        />
+      </div>
+    </div>
+  );
+
   return (
     <>
       <Card className="overflow-hidden border-border ">
-        <CardHeader className="space-y-0 p-4 sm:p-6">
+        <CardHeader className="space-y-0">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
               <UserAvatar
@@ -253,38 +354,83 @@ export const PostCard = ({
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Clock className="w-3.5 h-3.5" />
+                  {/* <Clock className="w-3.5 h-3.5" /> */}
                   <span>{formatTimeAgo(createdAt)}</span>
                 </div>
               </div>
             </div>
 
             {isOwner && postId && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit Post
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setIsDeleteDialogOpen(true)}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Post
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              isMobile ? (
+                <Drawer shouldScaleBackground={false}>
+                  <DrawerTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent>
+                    <DrawerHeader className="text-left">
+                      <DrawerTitle>Post Options</DrawerTitle>
+                      <DrawerDescription>
+                        Choose an action for this post
+                      </DrawerDescription>
+                    </DrawerHeader>
+                    <div className="p-4 space-y-2">
+                      <DrawerClose asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start"
+                          onClick={() => setIsEditModalOpen(true)}
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Post
+                        </Button>
+                      </DrawerClose>
+                      <DrawerClose asChild>
+                        <Button
+                          variant="destructive"
+                          className="w-full justify-start "
+                          onClick={() => setIsDeleteDialogOpen(true)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Post
+                        </Button>
+                      </DrawerClose>
+                    </div>
+                    <DrawerFooter className="pt-2">
+                      <DrawerClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                      </DrawerClose>
+                    </DrawerFooter>
+                  </DrawerContent>
+                </Drawer>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Post
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Post
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )
             )}
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
+        <CardContent className="space-y-3 sm:space-y-4 pt-0 sm:pt-0">
           {/* Post Media (Image or Video) */}
           {image && (
             <div className="rounded-lg overflow-hidden -mx-4 sm:-mx-6 -mt-1 bg-black/5">
@@ -373,93 +519,7 @@ export const PostCard = ({
           <DialogHeader>
             <DialogTitle>Edit Post</DialogTitle>
           </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-title">Title</Label>
-              <Input
-                id="edit-title"
-                value={editForm.title}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, title: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Description</Label>
-              <Textarea
-                id="edit-description"
-                rows={4}
-                value={editForm.description}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, description: e.target.value })
-                }
-                className="resize-none"
-              />
-            </div>
-
-            {/* Edit Media Section */}
-            <div className="space-y-2">
-              <Label>Media</Label>
-              {editImagePreview ? (
-                <div className="relative rounded-lg overflow-hidden border">
-                  {editImageFile?.type.startsWith('video/') || (typeof editImagePreview === 'string' && isVideo(editImagePreview)) ? (
-                    <video
-                      src={editImagePreview}
-                      controls
-                      className="w-full h-32 object-cover"
-                    />
-                  ) : (
-                    <img
-                      src={editImagePreview}
-                      alt="Preview"
-                      className="w-full h-32 object-cover"
-                    />
-                  )}
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 right-2 h-7 w-7"
-                    onClick={removeEditImage}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ) : (
-                <div
-                  className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                  onClick={() => editFileInputRef.current?.click()}
-                >
-                  <ImagePlus className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                  <p className="text-xs text-muted-foreground">
-                    Click to upload media
-                  </p>
-                </div>
-              )}
-              <input
-                ref={editFileInputRef}
-                type="file"
-                accept="image/*,video/*"
-                onChange={handleEditImageChange}
-                className="hidden"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-link">Link (Optional)</Label>
-              <Input
-                id="edit-link"
-                value={editForm.link}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, link: e.target.value })
-                }
-                placeholder="https://..."
-              />
-            </div>
-          </div>
-
+          {renderEditForm()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
               Cancel
@@ -482,7 +542,7 @@ export const PostCard = ({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               Delete Post
             </AlertDialogAction>
