@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Table, Tag } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { attRepo, AttendanceStatus, HistoryRecord, AttendanceSettings } from "@/repositories/attRepo";
-import Loader from "@/components/Loader";
 import { useAuthStore } from "@/hooks/store/authStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Sun, Moon, Clock, AlertCircle, CheckCircle2, XCircle, Info } from "lucide-react";
 
@@ -175,9 +175,9 @@ const Attendance: React.FC = () => {
     },
   ];
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-64"><Loader /></div>;
-  }
+  // if (isLoading) {
+  //   return <div className="flex justify-center items-center h-64"><Loader /></div>;
+  // }
 
   if (!user?._id) {
     return (
@@ -204,7 +204,7 @@ const Attendance: React.FC = () => {
   return (
     <div className="flex flex-col gap-4 sm:gap-5 p-4 sm:p-6">
       {/* Shift Info Card */}
-      <Card className="border-l-4 border-l-primary">
+      <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             {userShift === 'Morning' ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-blue-500" />}
@@ -212,7 +212,16 @@ const Attendance: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {currentShiftInfo ? (
+          {isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-muted/50 p-3 rounded-lg space-y-2">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-5 w-24" />
+                </div>
+              ))}
+            </div>
+          ) : currentShiftInfo ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
               <div className="bg-muted/50 p-3 rounded-lg">
                 <p className="text-muted-foreground text-xs mb-1">Timing</p>
@@ -254,7 +263,20 @@ const Attendance: React.FC = () => {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center py-6"><Loader /></div>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="p-3 sm:p-4 rounded-lg bg-muted/50 space-y-2 flex flex-col items-center">
+                    <Skeleton className="h-3 w-12" />
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : isCheckedIn ? (
             <div className="space-y-4">
               {/* Badges */}
@@ -331,7 +353,27 @@ const Attendance: React.FC = () => {
         </CardHeader>
         <CardContent>
           {isHistoryLoading ? (
-            <div className="flex justify-center py-6"><Loader /></div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-4">
+                <Skeleton className="h-8 w-[250px]" />
+                <Skeleton className="h-8 w-[100px]" />
+              </div>
+              <div className="rounded-md border">
+                <div className="h-12 border-b px-4 flex items-center">
+                  <Skeleton className="h-4 w-full" />
+                </div>
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-16 border-b px-4 flex items-center gap-4">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : history.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">No records found</p>
           ) : (

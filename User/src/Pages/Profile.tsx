@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
@@ -184,11 +185,51 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading profile...</p>
-        </div>
+      <div className="p-4 sm:p-6 space-y-6">
+        {/* Profile Card Skeleton */}
+        <Card>
+          <CardContent className="pt-6 pb-6">
+            <div className="flex items-center gap-4">
+              <div className="shrink-0">
+                <Skeleton className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl" />
+              </div>
+              <div className="flex-1 min-w-0 space-y-2">
+                <Skeleton className="h-6 w-48 mb-2" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Details Card Skeleton */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-6 w-40" />
+            </div>
+            <Skeleton className="h-8 w-20" />
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i}>
+                {i > 1 && <Separator className="my-3" />}
+                <div className="flex items-center gap-4 py-2">
+                  <Skeleton className="w-10 h-10 rounded-xl" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-4 w-48" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Logout Button Skeleton */}
+        <Skeleton className="h-11 w-full" />
       </div>
     )
   }

@@ -26,6 +26,44 @@ import { postRepo } from "../repositories/postRepo";
 import UrlBreadcrumb from "@/components/UrlBreadcrumb";
 import PaginatedList, { PaginatedListRef } from "../components/PaginatedList";
 import { PostCard } from "@/components/PostCard";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+
+const PostSkeleton = () => {
+  return (
+    <Card className="overflow-hidden border-border">
+      <CardHeader className="space-y-0 p-4 sm:p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Skeleton className="h-9 w-9 sm:h-11 sm:w-11 rounded-full" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
+        <div className="-mx-4 sm:-mx-6 -mt-1">
+          <Skeleton className="w-full h-48 sm:h-64" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex gap-2 w-full">
+            <Skeleton className="h-8 flex-1" />
+            <Skeleton className="h-8 flex-1" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 // Memoized PostCard to prevent re-renders when parent state changes
 const MemoizedPostCard = memo(PostCard);
@@ -318,7 +356,7 @@ const Posts = () => {
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
 
-      <UrlBreadcrumb />
+      {/* <UrlBreadcrumb /> */}
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="w-full space-y-1">
@@ -377,6 +415,13 @@ const Posts = () => {
               />
             )}
             pageSize={10}
+            loadingComponent={
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <PostSkeleton key={i} />
+                ))}
+              </div>
+            }
           />
         )}
 
@@ -414,6 +459,13 @@ const Posts = () => {
               />
             )}
             pageSize={10}
+            loadingComponent={
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <PostSkeleton key={i} />
+                ))}
+              </div>
+            }
           />
         )}
 

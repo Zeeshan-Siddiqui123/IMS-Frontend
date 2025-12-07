@@ -3,7 +3,6 @@ import { Navigate } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { userRepo } from "../repositories/userRepo"
 import { useAuthStore } from "@/hooks/store/authStore"
-import Loader from "@/components/Loader"
 
 interface PrivateRouteProps {
   children: React.ReactNode
@@ -34,14 +33,14 @@ const PrivateRoute = ({ children }: PrivateRouteProps) => {
     verifyAuth()
   }, [isAuthenticated, setUser, setLoading])
 
-  // Show skeleton layout while checking auth (not full screen spinner)
-  // Show loader while checking auth
-  if (isChecking) {
-    return (
-      <>
-      </>
-    )
-  }
+  // // Show skeleton layout while checking auth (not full screen spinner)
+  // // Show loader while checking auth
+  // if (isChecking) {
+  //   return (
+  //     <>
+  //     </>
+  //   )
+  // }
 
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }

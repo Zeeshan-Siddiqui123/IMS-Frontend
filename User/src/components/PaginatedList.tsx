@@ -14,6 +14,7 @@ interface PaginatedListProps<T> {
   fetchData: (page: number, limit: number) => Promise<{ items: T[]; pagination: Pagination }>;
   renderItem: (item: T, index: number) => React.ReactNode;
   pageSize?: number;
+  loadingComponent?: React.ReactNode;
   key?: string; // Add key prop to force reset when switching tabs
 }
 
@@ -25,7 +26,7 @@ export interface PaginatedListRef<T> {
 }
 
 const PaginatedList = forwardRef(<T extends { _id?: string }>(
-  { fetchData, renderItem, pageSize = 10 }: PaginatedListProps<T>,
+  { fetchData, renderItem, pageSize = 10, loadingComponent }: PaginatedListProps<T>,
   ref: React.Ref<PaginatedListRef<T>>
 ) => {
   const [items, setItems] = useState<T[]>([]);
@@ -44,7 +45,7 @@ const PaginatedList = forwardRef(<T extends { _id?: string }>(
       setError(null);
 
       const response = await fetchData(pageToLoad, pageSize);
-      
+
       if (!response) {
         throw new Error("No response from fetchData");
       }
@@ -111,7 +112,9 @@ const PaginatedList = forwardRef(<T extends { _id?: string }>(
   }, [loadPage]);
 
   // Show loader on initial load
-  if (loading && page === 1) return <Loader />;
+  if (loading && page === 1) {
+    return loadingComponent ? <>{loadingComponent}</> : <Loader />;
+  }
 
   return (
     <div className="space-y-4">
