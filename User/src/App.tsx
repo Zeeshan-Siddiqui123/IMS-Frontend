@@ -10,12 +10,12 @@ import Posts from "./Pages/Posts"
 import Profile from "./Pages/Profile"
 import Direct from "./Pages/Direct"
 
-import { Toaster } from "sonner"
+import { Toaster } from "@/components/ui/sonner"
 
 const App = () => {
   return (
     <Router>
-      <Toaster richColors position="top-center" />
+      <Toaster />
       <Routes>
         {/* Public routes */}
         <Route path="/signup" element={<SignUp />} />

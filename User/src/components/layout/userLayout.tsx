@@ -3,7 +3,7 @@ import { SidebarInset, SidebarProvider } from '../ui/sidebar'
 import { AppSidebar } from '../app-sidebar'
 import { SiteHeader } from '../site-header'
 import { Outlet } from 'react-router-dom'
-import { Toaster } from "@/components/ui/sonner"
+
 import { BottomNav } from '../BottomNav'
 import PullToRefresh from '../PullToRefresh'
 
@@ -30,7 +30,7 @@ const UserLayout = () => {
             </SidebarInset>
             {/* Bottom Navigation - only visible on mobile */}
             <BottomNav />
-            <Toaster />
+
         </SidebarProvider>
     )
 }
