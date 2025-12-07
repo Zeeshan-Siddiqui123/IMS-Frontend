@@ -19,6 +19,7 @@ import { toast } from "sonner"
 import {
   Edit3,
   Camera,
+  Copy,
   Loader2,
   LogOut,
   Mail,
@@ -270,10 +271,23 @@ export default function ProfilePage() {
                 {user?.name || "Student Name"}
               </h1>
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="secondary" className="gap-1 text-xs">
+                <Badge
+                  variant="secondary"
+                  className="gap-1 text-xs cursor-pointer hover:bg-secondary/80 transition-colors"
+                  onClick={() => {
+                    const id = user?.incubation_id;
+                    if (id) {
+                      navigator.clipboard.writeText(id);
+                      toast.success("Incubation ID copied to clipboard");
+                    }
+                  }}
+                  title="Click to copy ID"
+                >
                   <IdCard className="w-3 h-3" />
                   {user?.incubation_id || "N/A"}
+                  <Copy className="w-3 h-3 ml-1 opacity-50" />
                 </Badge>
+
                 {user?.shift && (
                   <Badge variant="outline" className="gap-1 text-xs">
                     {user?.shift === "Morning" ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
