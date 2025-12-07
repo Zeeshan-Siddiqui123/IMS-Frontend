@@ -5,6 +5,7 @@ import { SiteHeader } from '../site-header'
 import { Outlet } from 'react-router-dom'
 import { Toaster } from "@/components/ui/sonner"
 import { BottomNav } from '../BottomNav'
+import PullToRefresh from '../PullToRefresh'
 
 const UserLayout = () => {
     return (
@@ -22,7 +23,9 @@ const UserLayout = () => {
                 <SiteHeader />
                 {/* Add bottom padding on mobile for BottomNav */}
                 <div className="pb-20 md:pb-0">
-                    <Outlet />
+                    <PullToRefresh>
+                        <Outlet />
+                    </PullToRefresh>
                 </div>
             </SidebarInset>
             {/* Bottom Navigation - only visible on mobile */}
