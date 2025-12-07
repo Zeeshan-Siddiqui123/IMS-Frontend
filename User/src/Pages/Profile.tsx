@@ -134,12 +134,24 @@ export default function ProfilePage() {
       }
 
       if (editingId) {
+        // Format phone logic
+        let formattedPhone = formData.phone || "";
+        formattedPhone = formattedPhone.replace(/\D/g, "");
+        if (formattedPhone.startsWith("0")) formattedPhone = formattedPhone.substring(1);
+        if (formattedPhone && !formattedPhone.startsWith("92")) formattedPhone = `92${formattedPhone}`;
+
         const dataToSend = {
           ...formData,
-          phone: formData.phone ? `92${formData.phone}` : "",
+          phone: formattedPhone,
         };
+
         await userRepo.updateUser(editingId, dataToSend)
-        setUser({ ...user, ...dataToSend, avatar: newAvatarUrl })
+
+        // Refresh user data from server to ensure sync
+        const updatedUser = await userRepo.profile()
+        setAuthUser(updatedUser.user)
+        setUser(updatedUser.user)
+
         toast.success("Profile updated successfully")
       }
       setIsModalOpen(false)
