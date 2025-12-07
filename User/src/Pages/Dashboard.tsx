@@ -84,27 +84,30 @@ const Dashboard = () => {
     late: 0
   })
 
-  // useEffect(() => {
-  //   const fetchUser = async () => {
-  //     if (user) {
-  //       setLoading(false)
-  //       return
-  //     }
-  //     try {
-  //       const res = await userRepo.profile()
-  //       setUser(res.data)
-  //     } catch (err: any) {
-  //       console.error("Failed to fetch user:", err)
-  //       setLoading(false)
-  //     }
-  //   }
-  //   fetchUser()
-  // }, [user, setUser, setLoading])
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (user) {
+        setLoading(false)
+        return
+      }
+      try {
+        const res = await userRepo.profile()
+        setUser(res.data)
+      } catch (err: any) {
+        console.error("Failed to fetch user:", err)
+        setLoading(false)
+      }
+    }
+    fetchUser()
+  }, [user, setUser, setLoading])
 
   // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!user?._id) return
+      if (!user?._id) {
+        setDashboardLoading(false);
+        return;
+      }
 
       setDashboardLoading(true)
 
@@ -120,7 +123,11 @@ const Dashboard = () => {
         let fetchedTotalHours = 0
 
 
-        while (hasMoreData) {
+        let safetyCounter = 0;
+        const MAX_PAGES = 50;
+
+        while (hasMoreData && safetyCounter < MAX_PAGES) {
+          safetyCounter++;
           const historyRes = await attRepo.getUserHistory(user._id, currentPage, 100)
           const pageHistory = historyRes.history || []
 

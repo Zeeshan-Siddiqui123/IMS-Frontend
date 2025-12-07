@@ -37,7 +37,10 @@ const PrivateRoute = ({ children }: PrivateRouteProps) => {
   // Show skeleton layout while checking auth (not full screen spinner)
   // Show loader while checking auth
   if (isChecking) {
-    return true
+    return (
+      <>
+      </>
+    )
   }
 
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />

@@ -175,8 +175,17 @@ const Attendance: React.FC = () => {
     },
   ];
 
-  if (!user?._id) {
+  if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Loader /></div>;
+  }
+
+  if (!user?._id) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+        <AlertCircle className="w-10 h-10 mb-2" />
+        <p>User information not available</p>
+      </div>
+    );
   }
 
   const isCheckedIn = Boolean(attendance?.checkInTime);
