@@ -10,6 +10,19 @@ const api = axios.create({
 
 })
 
+// Add a request interceptor to attach the token
+api.interceptors.request.use(
+  (config) => {
+    // Check both storages
+    const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 api.interceptors.response.use(
   (response) => response,
 
@@ -20,6 +33,11 @@ api.interceptors.response.use(
 
     // Handle 401 Unauthorized
     if (status === 401 && !originalRequest._retry) {
+      // If we already tried refreshing and it failed (or it was the refresh endpoint itself), don't loop
+      if (originalRequest.url?.includes("/refresh-token")) {
+        return Promise.reject(error);
+      }
+
       if (message === "jwt expired" || message === "Invalid token" || message === "No token") {
         originalRequest._retry = true;
 
@@ -28,13 +46,17 @@ api.interceptors.response.use(
           const res = await api.post("/refresh-token");
 
           if (res.status === 200 && res.data.accessToken) {
-            // Token refreshed successfully
-            // Update session storage if that's where we keep it for client usage
-            sessionStorage.setItem("token", res.data.accessToken);
-            // Verify if we need to update state or if next request picks it up from storage/cookie
-            // Original request headers might need updating if they carried the old token
-            // But axios instance 'api' might pick up new cookie automatically if it relies on cookie
-            // If we attach token manually in request interceptor (not shown here but common), we'd need to update header
+            const newToken = res.data.accessToken;
+
+            // Sync both storages if they were being used
+            if (localStorage.getItem("token")) {
+              localStorage.setItem("token", newToken);
+            }
+            // Always update session (default)
+            sessionStorage.setItem("token", newToken);
+
+            // Attach new token to retry
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
             return api(originalRequest);
           }
