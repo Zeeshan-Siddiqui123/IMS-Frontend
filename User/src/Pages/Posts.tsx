@@ -20,7 +20,12 @@ import {
   Loader2,
   ImagePlus,
   X,
+  Video,
+  Image as ImageIcon,
+  Smile,
 } from "lucide-react";
+import { useAuthStore } from "@/hooks/store/authStore";
+import { UserAvatar } from "@/components/UserAvatar";
 import { toast } from "sonner";
 import { postRepo } from "../repositories/postRepo";
 // import UrlBreadcrumb from "@/components/UrlBreadcrumb";
@@ -322,8 +327,9 @@ const CreatePostDialog = memo(({
 CreatePostDialog.displayName = 'CreatePostDialog';
 
 const Posts = () => {
-  const [activeTab, setActiveTab] = useState("admin");
+  // const [activeTab, setActiveTab] = useState("admin"); // Removed activeTab
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { user } = useAuthStore();
 
   // Connect to socket events
   usePostSocket();
@@ -350,25 +356,21 @@ const Posts = () => {
 
     observerRef.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting) {
-        if (activeTab === 'admin' && hasMoreAdmin) {
-          fetchPosts(pageAdmin + 1, 10, 'admin');
-        } else if (activeTab === 'user' && hasMoreUser) {
+        if (hasMoreUser) {
           fetchPosts(pageUser + 1, 10, 'user');
         }
       }
     });
 
     if (node) observerRef.current.observe(node);
-  }, [loading, hasMoreAdmin, hasMoreUser, pageAdmin, pageUser, activeTab, fetchPosts]);
+  }, [loading, hasMoreUser, pageUser, fetchPosts]);
 
-  // Initial fetch when tab changes or generic mount
+  // Initial fetch
   useEffect(() => {
-    if (activeTab === 'admin' && adminPosts.length === 0) {
-      fetchPosts(1, 10, 'admin');
-    } else if (activeTab === 'user' && userPosts.length === 0) {
+    if (userPosts.length === 0) {
       fetchPosts(1, 10, 'user');
     }
-  }, [activeTab, fetchPosts, adminPosts.length, userPosts.length]);
+  }, [fetchPosts, userPosts.length]);
 
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
@@ -409,42 +411,38 @@ const Posts = () => {
     }
   }, [updatePost]);
 
-  const postsToRender = activeTab === 'admin' ? adminPosts : userPosts;
+  const postsToRender = userPosts;
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-
-      {/* <UrlBreadcrumb /> */}
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="w-full space-y-1">
-
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-2 h-10 sm:h-11">
-              <TabsTrigger value="admin" className="gap-1 sm:gap-2 text-xs sm:text-sm">
-                <Badge variant="outline" className="h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 border-current text-[10px] sm:text-xs">A</Badge>
-                <span className="hidden xs:inline">Admin </span>Announcements
-              </TabsTrigger>
-              <TabsTrigger value="user" className="gap-1 sm:gap-2 text-xs sm:text-sm">
-                <User className="w-3 h-3 sm:w-4 sm:h-4" />
-                User Posts
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        <Button onClick={() => setIsModalOpen(true)} size="default" className="gap-2 shadow-md w-full sm:w-auto sm:self-end">
-          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-          Create Post
-        </Button>
-      </div>
       <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
         {/* Posts List */}
+        {/* Create Post Input */}
+        <Card className="p-4 shadow-sm">
+          <div className="flex gap-4 items-center">
+            {/* We can grab user from auth store, but since we are inside Posts component and didn't import hook yet, let's keep it simple or assume we can add the hook. 
+               Actually, I need to add the import first. But I can't add import *and* replace body in one go easily with replace_file_content unless I do multi.
+               I'll do the body replacement first using a generic Avatar fallback or just a placeholder if user var isn't ready.
+               Wait, I should really use the user's avatar.
+               Let's assume I'll add the hook in a separate step or just use a generic User icon for now if I can't easily get the user name. 
+               Actually, userPosts might not be the current user.
+               Let's just use a generic UserAvatar with no name (fallback) or simpler: just the input field.
+               User explicitly said "fb ki trha". FB has avatar.
+               I will attempt to use a placeholder avatar for now to avoid breaking if I miss the import.
+            */}
+            <div className="h-10 w-10 rounded-full flex items-center justify-center overflow-hidden shrink-0">
+              <UserAvatar src={user?.avatar} name={user?.name} className="h-10 w-10" />
+            </div>
 
+            <div
+              onClick={() => setIsModalOpen(true)}
+              className="flex-1 bg-secondary/50 hover:bg-secondary/70 transition-colors rounded-full px-4 py-2.5 cursor-pointer text-muted-foreground text-sm font-medium"
+            >
+              What's on your mind?
+            </div>
+          </div>
+        </Card>
         {/* Loading when empty */}
         {loading && postsToRender.length === 0 && (
           <div className="space-y-4">
@@ -457,46 +455,23 @@ const Posts = () => {
         {/* List */}
         {postsToRender.map((post, index) => {
           const isLast = index === postsToRender.length - 1;
-          if (activeTab === 'admin') {
-            return (
-              <div key={post._id} ref={isLast ? lastPostRef : null}>
-                <MemoizedPostCard
-                  postId={post._id}
-                  title={post.title}
-                  description={post.description}
-                  link={post.link}
-                  image={post.image}
-                  createdAt={post.createdAt}
-                  isAdmin
-                // likeCount={post.likeCount} // Assuming PostCard handles these from internal logic or props? 
-                // Checking existing use of MemoizedPostCard, it didn't pass counts. 
-                // PostCard likely fetches or has internal state? 
-                // Wait, usePostSocket updates store, but does PostCard read from store?
-                // The previous implementation didn't pass counts either. 
-                // It seems PostCard is self-contained or receives props. 
-                // Let's pass all store props if needed, but for now stick to previous props + key.
-                />
-              </div>
-            );
-          } else {
-            return (
-              <div key={post._id} ref={isLast ? lastPostRef : null}>
-                <MemoizedPostCard
-                  postId={post._id}
-                  title={post.title}
-                  description={post.description}
-                  link={post.link}
-                  image={post.image}
-                  createdAt={post.createdAt}
-                  authorName={post.user?.name}
-                  authorId={post.user?._id}
-                  authorAvatar={post.user?.avatar}
-                  onDelete={handleDelete}
-                  onEdit={handleEdit}
-                />
-              </div>
-            );
-          }
+          return (
+            <div key={post._id} ref={isLast ? lastPostRef : null}>
+              <MemoizedPostCard
+                postId={post._id}
+                title={post.title}
+                description={post.description}
+                link={post.link}
+                image={post.image}
+                createdAt={post.createdAt}
+                authorName={post.user?.name}
+                authorId={post.user?._id}
+                authorAvatar={post.user?.avatar}
+                onDelete={handleDelete}
+                onEdit={handleEdit}
+              />
+            </div>
+          );
         })}
 
         {/* Loading more */}

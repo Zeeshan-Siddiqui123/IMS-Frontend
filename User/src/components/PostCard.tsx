@@ -338,20 +338,12 @@ export const PostCard = ({
                 src={authorAvatar}
                 name={displayName}
                 className="h-9 w-9 sm:h-11 sm:w-11"
-                fallbackColor={isAdmin
-                  ? "bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600"
-                  : "bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600"
-                }
+                fallbackColor="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600"
               />
 
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-sm leading-none">{displayName}</p>
-                  {isAdmin && (
-                    <Badge variant="secondary" className="text-xs px-2 py-0.5 font-medium">
-                      Admin
-                    </Badge>
-                  )}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   {/* <Clock className="w-3.5 h-3.5" /> */}
