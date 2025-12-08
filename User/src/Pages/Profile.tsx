@@ -377,7 +377,7 @@ export default function ProfilePage() {
             <div className="flex flex-col items-center gap-3 pb-4 border-b">
               <div className="relative group">
                 <div
-                  className="w-20 h-20 rounded-full overflow-hidden border-2 border-border cursor-pointer bg-muted"
+                  className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-border cursor-pointer bg-muted"
                   onClick={handleAvatarClick}
                 >
                   <UserAvatar
@@ -389,7 +389,7 @@ export default function ProfilePage() {
                 </div>
                 {/* Camera overlay */}
                 <div
-                  className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                  className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
                   onClick={handleAvatarClick}
                 >
                   <Camera className="w-4 h-4 text-white" />

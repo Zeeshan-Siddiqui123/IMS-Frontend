@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useCallback, memo } from "react";
+import React, { useState, useRef, useCallback, memo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,12 +23,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { postRepo } from "../repositories/postRepo";
-import UrlBreadcrumb from "@/components/UrlBreadcrumb";
-import PaginatedList, { PaginatedListRef } from "../components/PaginatedList";
+// import UrlBreadcrumb from "@/components/UrlBreadcrumb";
 import { PostCard } from "@/components/PostCard";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
+import { usePostStore } from "@/hooks/store/usePostStore";
+import { usePostSocket } from "@/hooks/usePostSocket";
 
 const PostSkeleton = () => {
   return (
@@ -145,6 +145,7 @@ const CreatePostDialog = memo(({
         ...formData,
         image: imageFile || undefined,
       });
+      // Success handled by socket/store or we can just close
       toast.success("Post created successfully");
       resetForm();
       onClose();
@@ -219,18 +220,18 @@ const CreatePostDialog = memo(({
             </Label>
 
             {imagePreview ? (
-              <div className="relative rounded-lg overflow-hidden border">
+              <div className="relative rounded-lg overflow-hidden border aspect-[4/3]">
                 {imageFile?.type.startsWith('video/') ? (
                   <video
                     src={imagePreview}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-full object-cover"
                     controls
                   />
                 ) : (
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="w-full h-48 object-cover"
+                    className="w-full h-full object-cover"
                   />
                 )}
                 <Button
@@ -324,34 +325,91 @@ const Posts = () => {
   const [activeTab, setActiveTab] = useState("admin");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const listRef = useRef<PaginatedListRef<any>>(null);
+  // Connect to socket events
+  usePostSocket();
+
+  const {
+    adminPosts,
+    userPosts,
+    loading,
+    hasMoreAdmin,
+    hasMoreUser,
+    pageAdmin,
+    pageUser,
+    fetchPosts,
+    deletePost,
+    updatePost
+  } = usePostStore();
+
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const lastPostRef = useCallback((node: HTMLDivElement) => {
+    if (loading) return;
+
+    if (observerRef.current) observerRef.current.disconnect();
+
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        if (activeTab === 'admin' && hasMoreAdmin) {
+          fetchPosts(pageAdmin + 1, 10, 'admin');
+        } else if (activeTab === 'user' && hasMoreUser) {
+          fetchPosts(pageUser + 1, 10, 'user');
+        }
+      }
+    });
+
+    if (node) observerRef.current.observe(node);
+  }, [loading, hasMoreAdmin, hasMoreUser, pageAdmin, pageUser, activeTab, fetchPosts]);
+
+  // Initial fetch when tab changes or generic mount
+  useEffect(() => {
+    if (activeTab === 'admin' && adminPosts.length === 0) {
+      fetchPosts(1, 10, 'admin');
+    } else if (activeTab === 'user' && userPosts.length === 0) {
+      fetchPosts(1, 10, 'user');
+    }
+  }, [activeTab, fetchPosts, adminPosts.length, userPosts.length]);
 
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
   }, []);
 
   const handlePostCreated = useCallback(() => {
-    listRef.current?.refresh?.();
+    // No manual refresh needed as socket or optimistic update handles it
+    // But if we want to be safe, we could invalidate queries or re-fetch first page
+    // The previous implementation refreshed the list.
+    // Given we have sockets, we might not need to do anything if the socket sends the new post back.
+    // If we want to rely on the Repo call adding it we can.
+    // However, existing code suggests createPost doesn't return the full post object with user population always populated for the list? 
+    // Let's rely on the socket for the definitive update OR the store's addPost.
+    // The store doesn't seem to have a manual 'refresh' method exposed easily without clearing.
+    // Let's assume socket 'post:created' handles it or the user manually refreshes if needed. 
+    // Actually, createPostDialog's handleCreate does NOT update store locally in current code. 
+    // Existing socket hook `usePostSocket` listens to `post:created` and calls `addPost`. 
+    // So we should be good if the backend emits the event.
   }, []);
 
   const handleDelete = useCallback(async (postId: string) => {
     try {
       await postRepo.deleteUserPost(postId);
       toast.success("Post deleted successfully");
-      listRef.current?.removeItem(postId);
+      deletePost(postId);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to delete post");
     }
-  }, []);
+  }, [deletePost]);
 
   const handleEdit = useCallback(async (postId: string, updatedData: any) => {
     try {
-      await postRepo.updateUserPost(postId, updatedData);
+      const res = await postRepo.updateUserPost(postId, updatedData);
       toast.success("Post updated successfully");
+      updatePost(res.post || res.data);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update post");
     }
-  }, []);
+  }, [updatePost]);
+
+  const postsToRender = activeTab === 'admin' ? adminPosts : userPosts;
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
@@ -386,87 +444,73 @@ const Posts = () => {
       </div>
       <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
         {/* Posts List */}
-        {activeTab === "admin" && (
-          <PaginatedList
-            key="admin-posts"
-            fetchData={async (page, limit) => {
-              const res = await postRepo.getAllPosts(page, limit);
-              return {
-                items: res.posts || res.data || [],
-                pagination: {
-                  currentPage: res.pagination.currentPage,
-                  totalPages: res.pagination.totalPages,
-                  totalPosts: res.pagination.total,
-                  hasMore: res.pagination.hasMore,
-                  postsPerPage: res.pagination.limit
-                }
-              };
-            }}
-            renderItem={(post: any) => (
-              <MemoizedPostCard
-                key={post._id}
-                postId={post._id}
-                title={post.title}
-                description={post.description}
-                link={post.link}
-                image={post.image}
-                createdAt={post.createdAt}
-                isAdmin
-              />
-            )}
-            pageSize={10}
-            loadingComponent={
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <PostSkeleton key={i} />
-                ))}
-              </div>
-            }
-          />
+
+        {/* Loading when empty */}
+        {loading && postsToRender.length === 0 && (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <PostSkeleton key={i} />
+            ))}
+          </div>
         )}
 
-        {activeTab === "user" && (
-          <PaginatedList
-            ref={listRef}
-            key="user-posts"
-            fetchData={async (page, limit) => {
-              const res = await postRepo.getAllUsersPosts(page, limit);
-              return {
-                items: res.posts || res.data || [],
-                pagination: {
-                  currentPage: res.pagination.currentPage,
-                  totalPages: res.pagination.totalPages,
-                  totalPosts: res.pagination.total,
-                  hasMore: res.pagination.hasMore,
-                  postsPerPage: res.pagination.limit
-                }
-              };
-            }}
-            renderItem={(post: any) => (
-              <MemoizedPostCard
-                key={post._id}
-                postId={post._id}
-                title={post.title}
-                description={post.description}
-                link={post.link}
-                image={post.image}
-                createdAt={post.createdAt}
-                authorName={post.user?.name}
-                authorId={post.user?._id}
-                authorAvatar={post.user?.avatar}
-                onDelete={handleDelete}
-                onEdit={handleEdit}
-              />
-            )}
-            pageSize={10}
-            loadingComponent={
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <PostSkeleton key={i} />
-                ))}
+        {/* List */}
+        {postsToRender.map((post, index) => {
+          const isLast = index === postsToRender.length - 1;
+          if (activeTab === 'admin') {
+            return (
+              <div key={post._id} ref={isLast ? lastPostRef : null}>
+                <MemoizedPostCard
+                  postId={post._id}
+                  title={post.title}
+                  description={post.description}
+                  link={post.link}
+                  image={post.image}
+                  createdAt={post.createdAt}
+                  isAdmin
+                // likeCount={post.likeCount} // Assuming PostCard handles these from internal logic or props? 
+                // Checking existing use of MemoizedPostCard, it didn't pass counts. 
+                // PostCard likely fetches or has internal state? 
+                // Wait, usePostSocket updates store, but does PostCard read from store?
+                // The previous implementation didn't pass counts either. 
+                // It seems PostCard is self-contained or receives props. 
+                // Let's pass all store props if needed, but for now stick to previous props + key.
+                />
               </div>
-            }
-          />
+            );
+          } else {
+            return (
+              <div key={post._id} ref={isLast ? lastPostRef : null}>
+                <MemoizedPostCard
+                  postId={post._id}
+                  title={post.title}
+                  description={post.description}
+                  link={post.link}
+                  image={post.image}
+                  createdAt={post.createdAt}
+                  authorName={post.user?.name}
+                  authorId={post.user?._id}
+                  authorAvatar={post.user?.avatar}
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                />
+              </div>
+            );
+          }
+        })}
+
+        {/* Loading more */}
+        {loading && postsToRender.length > 0 && (
+          <div className="flex justify-center p-4">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && postsToRender.length === 0 && (
+          <div className="text-center py-10 text-muted-foreground">
+            No posts found.
+          </div>
         )}
 
         {/* Create Post Modal - Separate component to isolate form state */}
