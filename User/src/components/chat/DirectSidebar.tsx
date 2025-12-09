@@ -31,15 +31,15 @@ const MOCK_USERS = [
 
 export function DirectSidebar({ className, activeUserId, onUserSelect }: DirectSidebarProps) {
     return (
-        <div className={cn("flex flex-col h-full bg-secondary/30 border-r", className)}>
-            <div className="p-4 border-b space-y-4">
+        <div className={cn("flex flex-col h-full min-h-0 overflow-hidden bg-secondary/30 border-r", className)}>
+            <div className="pt-12 md:pt-4 px-4 pb-4 border-b space-y-4">
                 <div className="relative">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Find or start a conversation" className="pl-8 bg-background/50 h-9" />
                 </div>
             </div>
 
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 min-h-0 overflow-hidden">
                 <div className="p-2 space-y-4">
 
                     {/* Announcements Section */}
