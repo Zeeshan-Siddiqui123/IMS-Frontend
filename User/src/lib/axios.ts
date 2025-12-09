@@ -5,7 +5,7 @@ const api = axios.create({
   baseURL:
     window.location.hostname === "localhost"
       ? "http://localhost:3000"
-      : "https://ims-server-sage.vercel.app",
+      : "https://bqims.vercel.app",
   withCredentials: true,
 
 })
