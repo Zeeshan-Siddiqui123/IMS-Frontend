@@ -5,6 +5,17 @@ import { toast } from "sonner"
 import { CheckCircle2, Clock, Sun, Moon, AlertCircle, XCircle, Loader2 } from "lucide-react"
 import { attRepo, AttendanceStatus, AttendanceSettings } from "@/repositories/attRepo"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface Props {
   userId: string
@@ -140,19 +151,36 @@ const MarkAttendance: React.FC<Props> = ({ userId }) => {
         )}
 
         {isCheckedIn && !isCheckedOut && (
-          <Button
-            onClick={handleCheckOut}
-            disabled={isLoading}
-            variant="destructive"
-            size="sm"
-            className="gap-1.5"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute h-full w-full rounded-full bg-red-300 opacity-75"></span>
-              <span className="relative rounded-full h-2 w-2 bg-red-300"></span>
-            </span>
-            {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Check Out"}
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                disabled={isLoading}
+                variant="destructive"
+                size="sm"
+                className="gap-1.5"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute h-full w-full rounded-full bg-red-300 opacity-75"></span>
+                  <span className="relative rounded-full h-2 w-2 bg-red-300"></span>
+                </span>
+                {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Check Out"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirm Check Out</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to check out? This action will mark your attendance for today as complete.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleCheckOut} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Yes, Check Out
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
 
         {/* Status Badges */}
