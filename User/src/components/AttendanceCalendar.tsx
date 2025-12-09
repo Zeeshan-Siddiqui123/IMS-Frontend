@@ -256,7 +256,7 @@ const AttendanceCalendar: React.FC<Props> = ({ userId }) => {
             </div>
 
             {/* Stats */}
-            {stats && (
+            {/* {stats && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                     <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
                         <CardContent className="p-3 text-center">
@@ -283,7 +283,7 @@ const AttendanceCalendar: React.FC<Props> = ({ userId }) => {
                         </CardContent>
                     </Card>
                 </div>
-            )}
+            )} */}
 
             {/* Detail Dialog */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
