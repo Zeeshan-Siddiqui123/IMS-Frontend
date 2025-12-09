@@ -255,36 +255,6 @@ const AttendanceCalendar: React.FC<Props> = ({ userId }) => {
                 </div>
             </div>
 
-            {/* Stats */}
-            {/* {stats && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                    <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-                        <CardContent className="p-3 text-center">
-                            <p className="text-xs text-muted-foreground mb-1">Present Days</p>
-                            <p className="text-xl font-bold text-green-600">{stats.present}</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
-                        <CardContent className="p-3 text-center">
-                            <p className="text-xs text-muted-foreground mb-1">Late Days</p>
-                            <p className="text-xl font-bold text-yellow-600">{stats.late}</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
-                        <CardContent className="p-3 text-center">
-                            <p className="text-xs text-muted-foreground mb-1">Total Hours</p>
-                            <p className="text-xl font-bold text-purple-600">{stats.totalHours?.toFixed(1) || 0}h</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-                        <CardContent className="p-3 text-center">
-                            <p className="text-xs text-muted-foreground mb-1">Total Records</p>
-                            <p className="text-xl font-bold text-blue-600">{stats.totalDays}</p>
-                        </CardContent>
-                    </Card>
-                </div>
-            )} */}
-
             {/* Detail Dialog */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent className="sm:max-w-md">
