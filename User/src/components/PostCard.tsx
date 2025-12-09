@@ -270,7 +270,7 @@ export const PostCard = ({
       <div className="space-y-2">
         <Label>Media</Label>
         {editImagePreview ? (
-          <div className="relative rounded-lg overflow-hidden border aspect-[4/3]">
+          <div className="relative rounded-lg overflow-hidden border aspect-[16/9]">
             {editImageFile?.type.startsWith('video/') || (typeof editImagePreview === 'string' && isVideo(editImagePreview)) ? (
               <video
                 src={editImagePreview}
@@ -425,7 +425,7 @@ export const PostCard = ({
         <CardContent className="space-y-3 sm:space-y-4 pt-0 sm:pt-0">
           {/* Post Media (Image or Video) */}
           {image && (
-            <div className="rounded-lg overflow-hidden -mx-4 sm:-mx-6 -mt-1 bg-black/5 aspect-[4/3]">
+            <div className="rounded-lg overflow-hidden -mx-4 sm:-mx-6 -mt-1 bg-black/5 aspect-[16/9]">
               {isVideo(image) ? (
                 <VideoPlayer
                   src={image}
