@@ -42,6 +42,29 @@ export interface HistoryRecord {
   isEarlyLeave: boolean
 }
 
+export interface CalendarStats {
+  totalDays: number
+  present: number
+  late: number
+  earlyLeave: number
+  absent: number
+  noCheckout: number
+  incomplete: number
+  totalHours: number
+}
+
+export interface CalendarHistoryResponse {
+  user: {
+    _id: string
+    name: string
+    email: string
+    shift: string
+  }
+  records: HistoryRecord[]
+  stats: CalendarStats
+  startDate: string | null
+}
+
 export class AttRepo {
   async checkIn(userId: string) {
     const response = await api.post(`/api/attendance/checkin/${userId}`)
@@ -60,6 +83,15 @@ export class AttRepo {
 
   async getUserHistory(userId: string, page = 1, limit = 10): Promise<{ user: any; history: HistoryRecord[]; pagination: any; totalHours?: number }> {
     const response = await api.get(`/api/attendance/history/${userId}?page=${page}&limit=${limit}`)
+    return response.data
+  }
+
+  async getCalendarHistory(userId: string, month?: number, year?: number): Promise<CalendarHistoryResponse> {
+    let url = `/api/attendance/calendar/${userId}`
+    if (month && year) {
+      url += `?month=${month}&year=${year}`
+    }
+    const response = await api.get(url)
     return response.data
   }
 

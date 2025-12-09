@@ -6,7 +6,9 @@ import { useAuthStore } from "@/hooks/store/authStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Sun, Moon, Clock, AlertCircle, CheckCircle2, XCircle, Info } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sun, Moon, Clock, AlertCircle, CheckCircle2, XCircle, Info, CalendarDays, TableIcon } from "lucide-react";
+import AttendanceCalendar from "@/components/AttendanceCalendar";
 
 const Attendance: React.FC = () => {
   const { user } = useAuthStore();
@@ -340,11 +342,11 @@ const Attendance: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* History */}
+      {/* History with Tabs */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between">
-            <span>History</span>
+            <span>Attendance History</span>
             <div className="flex gap-2">
               <Badge variant="secondary" className="text-sm">Total: {totalHours.toFixed(1)}h</Badge>
               <Badge variant="outline" className="text-sm">{pagination.total} records</Badge>
@@ -352,45 +354,64 @@ const Attendance: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {isHistoryLoading ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between pb-4">
-                <Skeleton className="h-8 w-[250px]" />
-                <Skeleton className="h-8 w-[100px]" />
-              </div>
-              <div className="rounded-md border">
-                <div className="h-12 border-b px-4 flex items-center">
-                  <Skeleton className="h-4 w-full" />
-                </div>
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-16 border-b px-4 flex items-center gap-4">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-6 w-20 rounded-full" />
+          <Tabs defaultValue="calendar" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="calendar" className="gap-2">
+                <CalendarDays className="w-4 h-4" />
+                Calendar
+              </TabsTrigger>
+              <TabsTrigger value="table" className="gap-2">
+                <TableIcon className="w-4 h-4" />
+                Table
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="calendar">
+              {user?._id && <AttendanceCalendar userId={user._id} />}
+            </TabsContent>
+
+            <TabsContent value="table">
+              {isHistoryLoading ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-4">
+                    <Skeleton className="h-8 w-[250px]" />
+                    <Skeleton className="h-8 w-[100px]" />
                   </div>
-                ))}
-              </div>
-            </div>
-          ) : history.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">No records found</p>
-          ) : (
-            <Table
-              columns={columns}
-              dataSource={history.map(item => ({ ...item, key: item._id }))}
-              pagination={{
-                current: pagination.current,
-                pageSize: pagination.pageSize,
-                total: pagination.total,
-                showSizeChanger: false
-              }}
-              onChange={handleTableChange}
-              size="small"
-              scroll={{ x: 600 }}
-            />
-          )}
+                  <div className="rounded-md border">
+                    <div className="h-12 border-b px-4 flex items-center">
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-16 border-b px-4 flex items-center gap-4">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : history.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">No records found</p>
+              ) : (
+                <Table
+                  columns={columns}
+                  dataSource={history.map(item => ({ ...item, key: item._id }))}
+                  pagination={{
+                    current: pagination.current,
+                    pageSize: pagination.pageSize,
+                    total: pagination.total,
+                    showSizeChanger: false
+                  }}
+                  onChange={handleTableChange}
+                  size="small"
+                  scroll={{ x: 600 }}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
