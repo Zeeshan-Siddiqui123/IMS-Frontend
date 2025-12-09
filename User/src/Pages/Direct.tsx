@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DirectSidebar } from "@/components/chat/DirectSidebar";
 import { ChatArea } from "@/components/chat/ChatArea";
 import { AnnouncementView } from "@/components/chat/AnnouncementView";
@@ -6,41 +6,67 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useChatStore } from "@/hooks/store/useChatStore";
+import { useSocket } from "@/hooks/useSocket";
 
 export default function Direct() {
-    const [activeId, setActiveId] = useState<string | undefined>(undefined);
+    // const [activeId, setActiveId] = useState<string | undefined>(undefined); // Removed local state
     const isMobile = useIsMobile();
+    const { conversations, addMessage, searchResults, activeUserId, setActiveUser } = useChatStore(); // Added activeUserId, setActiveUser
+    const { on } = useSocket();
 
-    // Mock lookup
-    const getName = (id?: string) => {
+    const getName = (id?: string | null) => { // Updated type
         if (!id) return undefined;
         if (id === 'announcements') return "Announcements";
 
-        const groups: Record<string, string> = {
-            "g1": "Project Alpha",
-            "g2": "Design Team",
-            "g3": "Frontend Devs",
-        };
-        if (groups[id]) return groups[id];
+        // Find in real conversations
+        const conversation = conversations.find(c => c.participants.some(p => p._id === id));
+        if (conversation) {
+            const participant = conversation.participants.find(p => p._id === id);
+            return participant?.name || "User";
+        }
 
-        const users: Record<string, string> = {
-            "1": "Alice Smith",
-            "2": "Bob Jones",
-            "3": "Charlie Day",
-            "4": "David Miller",
-            "5": "Eve Wilson",
-            "6": "Frank Thomas",
-            "7": "Grace Lee",
-        };
-        return users[id] || "User";
+        // Find in search results
+        const searchUser = searchResults.find(u => u._id === id);
+        if (searchUser) return searchUser.name;
+
+        return "User";
+    };
+
+    const getAvatar = (id?: string | null) => { // Updated type
+        if (!id) return undefined;
+        const conversation = conversations.find(c => c.participants.some(p => p._id === id));
+        if (conversation) {
+            const participant = conversation.participants.find(p => p._id === id);
+            return participant?.avatar;
+        }
+
+        // Find in search results
+        const searchUser = searchResults.find(u => u._id === id);
+        if (searchUser) return searchUser.avatar;
+
+        return undefined;
     };
 
     const renderContent = () => {
-        if (activeId === 'announcements') {
+        if (activeUserId === 'announcements') {
             return <AnnouncementView />;
         }
-        return <ChatArea activeUserId={activeId} userName={getName(activeId)} />;
+        // activeUserId can be null, cast to string|undefined if needed by component, or update component to accept null
+        return <ChatArea activeUserId={activeUserId || undefined} userName={getName(activeUserId)} userAvatar={getAvatar(activeUserId)} />;
     };
+
+    useEffect(() => {
+        // Listen for new messages
+        const unsubByKey = on('newMessage', (message) => {
+            console.log("New message received:", message);
+            addMessage(message);
+        });
+
+        return () => {
+            if (unsubByKey) unsubByKey();
+        };
+    }, [on, addMessage]);
 
     return (
         <div className="flex flex-1 bg-background overflow-hidden h-full min-h-0">
@@ -54,8 +80,8 @@ export default function Direct() {
                     </SheetTrigger>
                     <SheetContent side="left" className="p-0 w-80">
                         <DirectSidebar
-                            activeUserId={activeId}
-                            onUserSelect={(id) => setActiveId(id)}
+                            activeUserId={activeUserId || undefined} // Pass activeUserId
+                            onUserSelect={(id) => setActiveUser(id)} // Use store action
                             className="bg-background border-r-0"
                         />
                     </SheetContent>
@@ -63,8 +89,8 @@ export default function Direct() {
             ) : (
                 <DirectSidebar
                     className="w-80 shrink-0 hidden md:flex"
-                    activeUserId={activeId}
-                    onUserSelect={(id) => setActiveId(id)}
+                    activeUserId={activeUserId || undefined} // Pass activeUserId
+                    onUserSelect={(id) => setActiveUser(id)} // Use store action
                 />
             )}
 
