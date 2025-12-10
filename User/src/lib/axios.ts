@@ -2,9 +2,8 @@ import axios from "axios"
 
 
 const api = axios.create({
-  baseURL: "https://ims-backend-qmis.up.railway.app",
+  baseURL: import.meta.env.VITE_API_URL || "https://ims-backend-qmis.up.railway.app",
   withCredentials: true,
-
 })
 
 // Add a request interceptor to attach the token
