@@ -1,4 +1,4 @@
 type APPNAME = String
 
 export const APPNAME = import.meta.env.VITE_APPNAME;
-export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+export const SOCKET_URL = "https://ims-backend-qmis.up.railway.app";
