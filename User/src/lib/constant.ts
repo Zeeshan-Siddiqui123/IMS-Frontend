@@ -1,8 +1,4 @@
 type APPNAME = String
 
 export const APPNAME = "Incubation Management System"
-export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (
-    window.location.hostname === "localhost"
-        ? "http://localhost:3000"
-        : "https://ims-backend-qmis.up.railway.app"
-)
+export const SOCKET_URL = "https://ims-backend-qmis.up.railway.app"
