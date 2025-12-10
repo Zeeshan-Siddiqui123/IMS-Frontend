@@ -5,7 +5,7 @@ const api = axios.create({
   baseURL:
     window.location.hostname === "localhost"
       ? "http://localhost:3000"
-      : "https://bqims-backend.vercel.app",
+      : "https://ims-backend-qmis.up.railway.app",
   withCredentials: true,
 
 })
