@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { UserAvatar } from "@/components/UserAvatar"
-import { Home, Send, FileText, CalendarCheck, Check, LogOut, ChevronUp, Download, User } from "lucide-react"
+import { Home, Send, FileText, CalendarCheck, Check, LogOut, ChevronUp, Download, User, History } from "lucide-react"
 import Logout from "@/auth/Logout"
 import { userRepo } from "../repositories/userRepo"
 import { useAuthStore } from "@/hooks/store/authStore"
@@ -120,6 +120,13 @@ export function AppSidebar(props) {
                 <Link to="/profile" className="cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem asChild>
+                <Link to="/activities" className="cursor-pointer">
+                  <History className="mr-2 h-4 w-4" />
+                  <span>Activities</span>
                 </Link>
               </DropdownMenuItem>
 

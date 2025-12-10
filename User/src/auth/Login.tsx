@@ -67,7 +67,26 @@ const Login: React.FC = () => {
       }
       setUser(response.user)
       clearAttendance()
-      toast.success("Login successful")
+
+      // Show login info in toast
+      const loginInfo = response.loginInfo
+      if (loginInfo) {
+        const deviceType = loginInfo.device?.type || 'Unknown'
+        const browser = loginInfo.device?.browser || ''
+        const os = loginInfo.device?.os || ''
+        const city = loginInfo.location?.city || ''
+        const country = loginInfo.location?.country || ''
+
+        const locationStr = city ? `${city}${country ? `, ${country}` : ''}` : ''
+
+        toast.success("Login successful", {
+          description: `${deviceType.charAt(0).toUpperCase() + deviceType.slice(1)} • ${browser || os}${locationStr ? ` • ${locationStr}` : ''}`,
+          duration: 5000
+        })
+      } else {
+        toast.success("Login successful")
+      }
+
       navigate("/")
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Login failed"

@@ -129,15 +129,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
             });
 
             // Also update conversation last message if it exists in list
-            const conversations = get().conversations.map(c => {
+            let conversations = get().conversations.map(c => {
                 // Assuming we can identify the conversation. 
                 // Ideally backend returns the conversation ID, but let's check participants
                 const isParticipant = c.participants.some(p => p._id === receiverId);
                 if (isParticipant) {
-                    return { ...c, lastMessage: newMessage };
+                    return { ...c, lastMessage: newMessage, updatedAt: newMessage.createdAt };
                 }
                 return c;
             });
+
+            // Sort to move this conversation to top
+            conversations.sort((a, b) => {
+                const aTime = a.lastMessage?.createdAt || a.updatedAt;
+                const bTime = b.lastMessage?.createdAt || b.updatedAt;
+                return new Date(bTime).getTime() - new Date(aTime).getTime();
+            });
+
             set({ conversations });
 
         } catch (error) {
@@ -172,15 +180,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
             }
         }
 
-        // Always update conversation list last message
+        // Always update conversation list last message and move it to top
         // If conversation doesn't exist in list (new chat started by someone else), fetch conversations?
         // Or just update existing.
         const updatedConversations = conversations.map(c => {
             if (c._id === message.conversationId) {
-                return { ...c, lastMessage: message };
+                return { ...c, lastMessage: message, updatedAt: message.createdAt };
             }
             return c;
         });
+
+        // Sort by updatedAt to move conversation with new message to top
+        updatedConversations.sort((a, b) => {
+            const aTime = a.lastMessage?.createdAt || a.updatedAt;
+            const bTime = b.lastMessage?.createdAt || b.updatedAt;
+            return new Date(bTime).getTime() - new Date(aTime).getTime();
+        });
+
         set({ conversations: updatedConversations });
     },
 

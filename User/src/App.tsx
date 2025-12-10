@@ -9,6 +9,7 @@ import Attendance from "./Pages/Attendance"
 import Posts from "./Pages/Posts"
 import Profile from "./Pages/Profile"
 import Direct from "./Pages/Direct"
+import Activities from "./Pages/Activities"
 
 import { Toaster } from "@/components/ui/sonner"
 
@@ -30,6 +31,7 @@ const App = () => {
           <Route path="/posts" element={<Posts />} />
           <Route path="/direct" element={<Direct />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/activities" element={<Activities />} />
         </Route>
 
         {/* Catch all - redirect to home */}

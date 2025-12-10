@@ -12,8 +12,17 @@ import { useSocket } from "@/hooks/useSocket";
 export default function Direct() {
     // const [activeId, setActiveId] = useState<string | undefined>(undefined); // Removed local state
     const isMobile = useIsMobile();
+    const [sheetOpen, setSheetOpen] = useState(false); // Control sheet open/close
     const { conversations, addMessage, searchResults, activeUserId, setActiveUser } = useChatStore(); // Added activeUserId, setActiveUser
     const { on } = useSocket();
+
+    // Handle user selection - close sheet on mobile
+    const handleUserSelect = (id: string) => {
+        setActiveUser(id);
+        if (isMobile) {
+            setSheetOpen(false); // Close sheet on mobile after selection
+        }
+    };
 
     const getName = (id?: string | null) => { // Updated type
         if (!id) return undefined;
@@ -72,7 +81,7 @@ export default function Direct() {
         <div className="flex flex-1 bg-background overflow-hidden h-full min-h-0">
             {/* Sidebar - Hidden on mobile, Sheet on mobile */}
             {isMobile ? (
-                <Sheet>
+                <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                     <SheetTrigger asChild>
                         <Button variant="ghost" size="icon" className="absolute top-[4.5rem] left-4 z-50 md:hidden">
                             <Menu className="h-6 w-6" />
@@ -80,8 +89,8 @@ export default function Direct() {
                     </SheetTrigger>
                     <SheetContent side="left" className="p-0 w-80">
                         <DirectSidebar
-                            activeUserId={activeUserId || undefined} // Pass activeUserId
-                            onUserSelect={(id) => setActiveUser(id)} // Use store action
+                            activeUserId={activeUserId || undefined}
+                            onUserSelect={handleUserSelect}
                             className="bg-background border-r-0"
                         />
                     </SheetContent>
@@ -89,8 +98,8 @@ export default function Direct() {
             ) : (
                 <DirectSidebar
                     className="w-80 shrink-0 hidden md:flex"
-                    activeUserId={activeUserId || undefined} // Pass activeUserId
-                    onUserSelect={(id) => setActiveUser(id)} // Use store action
+                    activeUserId={activeUserId || undefined}
+                    onUserSelect={handleUserSelect}
                 />
             )}
 
