@@ -46,6 +46,13 @@ interface ChatState {
     setActiveUser: (userId: string | null) => void;
     addMessage: (message: Message) => void;
     updateTypingStatus: (userId: string, isTyping: boolean) => void; // Placeholder
+    markMessageAsRead: (conversationId: string, readerId: string) => void;
+
+    // Online Users
+    onlineUsers: string[];
+    setOnlineUsers: (users: string[]) => void;
+    addOnlineUser: (userId: string) => void;
+    removeOnlineUser: (userId: string) => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -58,6 +65,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
     isSendingMessage: false,
     isSearching: false,
     searchResults: [],
+
+    onlineUsers: [],
+
+    setOnlineUsers: (users) => set({ onlineUsers: users }),
+
+    addOnlineUser: (userId) => {
+        set((state) => {
+            if (!state.onlineUsers.includes(userId)) {
+                return { onlineUsers: [...state.onlineUsers, userId] };
+            }
+            return state;
+        });
+    },
+
+    removeOnlineUser: (userId) => {
+        set((state) => ({
+            onlineUsers: state.onlineUsers.filter(id => id !== userId)
+        }));
+    },
 
     fetchConversations: async () => {
         set({ isLoadingConversations: true });
@@ -202,5 +228,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     updateTypingStatus: (userId, isTyping) => {
         // TODO: implement logic to show typing indicator in UI
+    },
+
+    markMessageAsRead: (conversationId, readerId) => {
+        const { messages, conversations } = get();
+        // Update messages in current view
+        const updatedMessages = messages.map(msg => {
+            if (msg.conversationId === conversationId && !msg.seenBy.includes(readerId)) {
+                return { ...msg, seenBy: [...msg.seenBy, readerId] };
+            }
+            return msg;
+        });
+
+        // Update last message in conversations list if applicable
+        const updatedConversations = conversations.map(c => {
+            if (c._id === conversationId && c.lastMessage && !c.lastMessage.seenBy.includes(readerId)) {
+                return {
+                    ...c,
+                    lastMessage: { ...c.lastMessage, seenBy: [...c.lastMessage.seenBy, readerId] }
+                };
+            }
+            return c;
+        });
+
+        set({ messages: updatedMessages, conversations: updatedConversations });
     }
 }));
