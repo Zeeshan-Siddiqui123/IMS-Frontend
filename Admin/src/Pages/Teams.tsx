@@ -1,4 +1,5 @@
 import Loader from "@/components/Loader";
+import SimplePagination from "@/components/simple-pagination";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import UrlBreadcrumb from "@/components/UrlBreadcrumb";
@@ -15,6 +16,12 @@ const Teams = () => {
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [fieldEnumValues, setFieldEnumValues] = useState<string[]>([]);
+
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalUsers, setTotalUsers] = useState(0)
+  const [limit] = useState(10) // Items per page
+
   const [formData, setFormData] = useState({
     teamName: "",
     teamLeader: "",
@@ -24,37 +31,62 @@ const Teams = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // ===== API Calls =====
-  const fetchTeams = async () => {
+
+
+const fetchTeams = async (page = 1) => {
+  setLoading(true);
+  try {
+    // Fetch teams with pagination
+    const teamsResponse = await teamRepo.getAllTeams(page, limit);
+    console.log(totalUsers);
+    
+    // Format the teams data
+    const formatted = (teamsResponse.data || []).map((team: any) => {
+      const leader = team.members?.find((m: any) => m.role === "Team Leader");
+      const members = team.members?.filter((m: any) => m.role === "Member") || [];
+
+      return {
+        ...team,
+        teamLeader: leader?.user || null, // Direct user object for UI
+        members: members.map((m: any) => m.user).filter(Boolean) // Only user objects, remove nulls
+      };
+    });
+
+    // Update state with formatted data
+    setTeams(formatted);
+    setTotalPages(teamsResponse.pagination?.totalPages || 1);
+    setTotalUsers(teamsResponse.pagination?.total || 0);
+    setCurrentPage(teamsResponse.pagination?.currentPage || page);
+  } catch (error) {
+    message.error("Failed to fetch teams");
+    console.error("Fetch error:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const fetchUsers = async (page = 1) => {
+    setLoading(true)
     try {
-      const data = await teamRepo.getAllTeams();
+      // Fetch users with pagination
+      const usersResponse = await userRepo.getAllUsers(page, limit)
 
-      const formatted = data.map((team: any) => {
-        const leader = team.members.find((m: any) => m.role === "Team Leader");
-        const members = team.members.filter((m: any) => m.role === "Member");
+      // Fetch status data with same pagination
 
-        return {
-          ...team,
-          teamLeader: leader?.user, // UI ko direct user object milega
-          members: members.map((m: any) => m.user) // sirf user objects rakho
-        };
-      });
 
-      setTeams(formatted);
-    } catch {
-      message.error("Failed to fetch teams");
+      // Extract data from paginated response
+      setAllUsers(usersResponse.data || [])
+      setTotalPages(usersResponse.pagination?.totalPages || 1)
+      setTotalUsers(usersResponse.pagination?.total || 0)
+      setCurrentPage(usersResponse.pagination?.currentPage || page)
+    } catch (error) {
+      message.error("Failed to fetch users or attendance")
+      console.error("Fetch error:", error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const fetchUsers = async () => {
-    try {
-      const users = await userRepo.getAllUsers();
-      setAllUsers(users);
-    } catch {
-      message.error("Failed to fetch users");
-    }
-  };
 
   const fetchFields = async () => {
     try {
@@ -65,11 +97,29 @@ const Teams = () => {
     }
   };
 
-  useEffect(() => {
-    fetchTeams();
-    fetchUsers();
-    fetchFields();
-  }, []);
+   const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    fetchTeams(page);
+    fetchUsers(page)
+  }
+
+useEffect(() => {
+    let isMounted = true
+    
+    const initializeData = async () => {
+      if (isMounted) {
+        await fetchUsers(1)
+        await fetchTeams(1)
+        await fetchFields()
+      }
+    }
+    
+    initializeData()
+    
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const handleSave = async () => {
     try {
@@ -220,8 +270,20 @@ const Teams = () => {
               )}
             </TableBody>
           </Table>
+          
         )}
+
+        
       </div>
+      {totalPages > 1 && (
+                      <div className="p-4 border-t">
+                        <SimplePagination
+                          currentPage={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={handlePageChange}
+                        />
+                      </div>
+                    )}
 
       {/* Modal */}
       <Modal
@@ -270,7 +332,17 @@ const Teams = () => {
                 value: user._id
               }))}
             style={{ width: "100%" }}
+            
           />
+          {/* {totalPages > 1 && (
+              <div className="p-4 border-t">
+                <SimplePagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            )} */}
           {errors.members && <p className="text-red-500 text-xs">{errors.members}</p>}
 
           {/* Field */}

@@ -2,8 +2,8 @@ import api from "../lib/axios"
 
 export class TeamRepo {
   // Fetch all users
-  async getAllTeams() {
-    const response = await api.get("/api/admin/team")
+  async getAllTeams(page: number, limit: number) {
+    const response = await api.get(`/api/admin/team?page=${page}&limit=${limit}`)
     return response.data
   }
 

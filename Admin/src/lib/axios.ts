@@ -2,8 +2,9 @@ import axios from "axios"
 
 
 const api = axios.create({
-  baseURL: "https://ims-backend-qmis.up.railway.app",
+  baseURL:  "http://localhost:3000",
   withCredentials: true,
 })
+
 
 export default api
