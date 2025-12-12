@@ -11,7 +11,7 @@ export interface Notification {
         profilePicture?: string;
         username: string;
     };
-    type: 'LIKE' | 'COMMENT' | 'POST_UPLOAD' | 'MESSAGE' | 'SYSTEM';
+    type: 'LIKE' | 'COMMENT' | 'POST_UPLOAD' | 'MESSAGE' | 'SYSTEM' | 'LOGIN';
     message: string;
     data: any;
     isRead: boolean;

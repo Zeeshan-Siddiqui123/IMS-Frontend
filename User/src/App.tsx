@@ -10,6 +10,7 @@ import Posts from "./Pages/Posts"
 import Profile from "./Pages/Profile"
 import Direct from "./Pages/Direct"
 import Activities from "./Pages/Activities"
+import Notifications from "./Pages/Notifications"
 
 import { Toaster } from "@/components/ui/sonner"
 
@@ -32,6 +33,7 @@ const App = () => {
           <Route path="/direct" element={<Direct />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/activities" element={<Activities />} />
+          <Route path="/notifications" element={<Notifications />} />
         </Route>
 
         {/* Catch all - redirect to home */}

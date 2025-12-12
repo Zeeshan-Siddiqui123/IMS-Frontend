@@ -130,6 +130,13 @@ export function NotificationsDropdown() {
                         </div>
                     )}
                 </ScrollArea>
+                <div className="p-4 border-t border-border">
+                    <Link to="/notifications" onClick={() => setOpen(false)}>
+                        <Button variant="outline" className="w-full text-xs h-8">
+                            See all notifications
+                        </Button>
+                    </Link>
+                </div>
             </DropdownMenuContent>
         </DropdownMenu>
     );

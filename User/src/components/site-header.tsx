@@ -5,6 +5,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import MarkAttendance from "./MarkAttendance"
 import { useAuthStore } from "@/hooks/store/authStore"
 import { UserAvatar } from "./UserAvatar"
+import { NotificationsDropdown } from "./NotificationsDropdown"
 
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
@@ -25,6 +26,7 @@ export function SiteHeader() {
         />
         <div className="ml-auto flex items-center gap-2 overflow-x-auto">
           <MarkAttendance userId={user?._id} />
+          <NotificationsDropdown />
 
           {/* Install App Button - Mobile Only */}
           {isInstallable && (
