@@ -2,10 +2,11 @@ import { useRef, useEffect, useState } from "react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Hash, Phone, Video, PlusCircle, SendHorizontal } from "lucide-react";
+import { Hash, Phone, Video, PlusCircle, SendHorizontal, CheckCheck } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useAuthStore } from "@/hooks/store/authStore";
 import { useChatStore } from "@/hooks/store/useChatStore";
+import { useSocket } from "@/hooks/useSocket";
 
 interface ChatAreaProps {
     activeUserId?: string;
@@ -16,8 +17,43 @@ interface ChatAreaProps {
 export function ChatArea({ activeUserId, userName = "Select a User", userAvatar }: ChatAreaProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const { user } = useAuthStore();
-    const { messages, fetchMessages, sendMessage, isLoadingMessages } = useChatStore();
+    const { messages, fetchMessages, sendMessage, isLoadingMessages, markMessageAsRead } = useChatStore();
     const [inputValue, setInputValue] = useState("");
+    const { socket, on, emit } = useSocket();
+
+    // Listen for read receipts
+    useEffect(() => {
+        const removeListener = on('messageRead', ({ conversationId, readerId }) => {
+            markMessageAsRead(conversationId, readerId);
+        });
+        return removeListener;
+    }, [on, markMessageAsRead]);
+
+    // Mark messages as read when viewing them
+    useEffect(() => {
+        if (activeUserId && messages.length > 0 && user) {
+            const lastMessage = messages[messages.length - 1];
+
+            // Only mark as read if:
+            // 1. Message exists and has an ID (sanity check)
+            // 2. Message is NOT sent by me (I don't "read" my own messages in this context)
+            // 3. I haven't already marked it as seen (prevents infinite loop)
+            const isFromMe = (typeof lastMessage.sender === 'object' ? lastMessage.sender._id : lastMessage.sender) === user._id;
+            const hasSeen = lastMessage.seenBy.includes(user._id);
+
+            if (lastMessage.conversationId && !isFromMe && !hasSeen) {
+                // Emit event to notify the sender
+                emit('messageRead', {
+                    conversationId: lastMessage.conversationId,
+                    readerId: user._id,
+                    senderId: activeUserId
+                });
+
+                // Update local store immediately to remove unread highlight
+                markMessageAsRead(lastMessage.conversationId, user._id);
+            }
+        }
+    }, [activeUserId, messages, user, emit, markMessageAsRead]);
 
     useEffect(() => {
         if (activeUserId && activeUserId !== 'announcements') {
@@ -105,18 +141,24 @@ export function ChatArea({ activeUserId, userName = "Select a User", userAvatar 
                                         <UserAvatar src={userAvatar} name={userName} className="h-10 w-10 mt-0.5 cursor-pointer hover:opacity-80 transition-opacity" />
                                     )}
 
-                                    <div className={`max-w-[70%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                        <div className="flex items-baseline gap-2 mb-1">
-                                            {!isMe && <span className="font-semibold text-sm hover:underline cursor-pointer">{userName}</span>}
-                                            <span className="text-[10px] text-muted-foreground select-none">
+                                    <div className={`max-w-[70%] min-w-0 flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                        <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+                                            {!isMe && <span className="font-semibold text-sm hover:underline cursor-pointer truncate max-w-[150px]">{userName}</span>}
+                                            <span className="text-[10px] text-muted-foreground select-none whitespace-nowrap flex items-center gap-1">
                                                 {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {isMe && (
+                                                    <CheckCheck
+                                                        className={`w-3 h-3 ${msg.seenBy.some(id => id !== user?._id) ? "text-blue-500" : "text-muted-foreground"}`}
+                                                    />
+                                                )}
                                             </span>
                                         </div>
-                                        <div className={`px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed shadow-sm
+                                        <div className={`px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed shadow-sm break-words overflow-hidden
                                     ${isMe
                                                 ? 'bg-primary text-primary-foreground rounded-tr-sm'
                                                 : 'bg-secondary/50 hover:bg-secondary/60 transition-colors rounded-tl-sm'
-                                            }`}>
+                                            }`}
+                                            style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                             {msg.text}
                                         </div>
                                     </div>

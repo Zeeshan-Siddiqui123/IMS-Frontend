@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useChatStore } from "@/hooks/store/useChatStore";
 import { useAuthStore } from "@/hooks/store/authStore";
 import { useEffect, useState } from "react";
+import { useSocket } from "@/hooks/useSocket";
 
 interface DirectSidebarProps {
     className?: string;
@@ -33,6 +34,32 @@ export function DirectSidebar({ className, activeUserId, onUserSelect }: DirectS
     } = useChatStore();
     const { user: currentUser } = useAuthStore();
     const [searchQuery, setSearchQuery] = useState("");
+    const { on, emit } = useSocket();
+    const { onlineUsers, setOnlineUsers, addOnlineUser, removeOnlineUser } = useChatStore();
+
+    // Socket listeners for online status
+    useEffect(() => {
+        const quietOffline = on('userOffline', (userId: string) => {
+            removeOnlineUser(userId);
+        });
+
+        const quietOnline = on('userOnline', (userId: string) => {
+            addOnlineUser(userId);
+        });
+
+        const quietGetOnline = on('getOnlineUsers', (users: string[]) => {
+            setOnlineUsers(users);
+        });
+
+        // Request initial list in case we missed the connection event
+        emit('getOnlineUsers');
+
+        return () => {
+            quietOffline();
+            quietOnline();
+            quietGetOnline();
+        };
+    }, [on, emit, addOnlineUser, removeOnlineUser, setOnlineUsers]);
 
     useEffect(() => {
         fetchConversations();
@@ -103,9 +130,9 @@ export function DirectSidebar({ className, activeUserId, onUserSelect }: DirectS
                                                 <UserAvatar src={user.avatar} name={user.name} className="h-8 w-8 md:h-9 md:w-9" />
                                             </div>
 
-                                            <div className="flex-1 text-left overflow-hidden">
+                                            <div className="flex-1 min-w-0 overflow-hidden text-left">
                                                 <div className="font-medium text-sm truncate">{user.name}</div>
-                                                <div className="text-xs truncate opacity-70 font-normal">
+                                                <div className="text-xs text-muted-foreground/70 font-normal truncate">
                                                     {user.email}
                                                 </div>
                                             </div>
@@ -189,6 +216,16 @@ export function DirectSidebar({ className, activeUserId, onUserSelect }: DirectS
                                             // Parent passes the 'activeUserId' which seems to be the ID of the person we are chatting with
                                             const isActive = activeUserId === otherUser._id;
 
+                                            // Determine unread status
+                                            // It is unread if:
+                                            // 1. There is a last message
+                                            // 2. The sender is NOT me (active user)
+                                            // 3. My ID is NOT in seenBy array
+                                            const isUnread = conversation.lastMessage &&
+                                                conversation.lastMessage.sender !== currentUser?._id &&
+                                                (typeof conversation.lastMessage.sender === 'object' ? conversation.lastMessage.sender._id !== currentUser?._id : true) &&
+                                                !conversation.lastMessage.seenBy.includes(currentUser?._id || '');
+
                                             return (
                                                 <Button
                                                     key={conversation._id}
@@ -204,16 +241,21 @@ export function DirectSidebar({ className, activeUserId, onUserSelect }: DirectS
                                                     <div className="relative shrink-0 mr-3">
                                                         <UserAvatar src={otherUser.avatar} name={otherUser.name} className="h-8 w-8 md:h-9 md:w-9" />
                                                         <span className={cn("absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background",
-                                                            otherUser.status === 'online' ? "bg-green-500" :
-                                                                otherUser.status === 'idle' ? "bg-yellow-500" :
-                                                                    otherUser.status === 'dnd' ? "bg-red-500" : "bg-gray-500"
+                                                            onlineUsers.includes(otherUser._id) ? "bg-green-500" : "bg-gray-500"
                                                         )} />
                                                     </div>
 
-                                                    <div className="flex-1 text-left overflow-hidden">
-                                                        <div className="font-medium text-sm truncate">{otherUser.name}</div>
-                                                        <div className="text-xs truncate opacity-70 font-normal">
-                                                            {conversation.lastMessage?.text || "Started a conversation"}
+                                                    <div className="flex-1 min-w-0 overflow-hidden text-left">
+                                                        <div className={cn("text-sm truncate flex justify-between items-center", isUnread ? "font-bold text-foreground" : "font-medium")}>
+                                                            <span>{otherUser.name}</span>
+                                                            {isUnread && <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0 ml-2" />}
+                                                        </div>
+                                                        <div className={cn("text-xs truncate", isUnread ? "font-semibold text-foreground" : "text-muted-foreground/70 font-normal")}>
+                                                            {conversation.lastMessage?.text ? (
+                                                                conversation.lastMessage.text.length > 30
+                                                                    ? conversation.lastMessage.text.substring(0, 27) + "..."
+                                                                    : conversation.lastMessage.text
+                                                            ) : "Started a conversation"}
                                                         </div>
                                                     </div>
                                                 </Button>
