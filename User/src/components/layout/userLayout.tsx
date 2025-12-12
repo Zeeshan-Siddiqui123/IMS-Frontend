@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { SidebarInset, SidebarProvider } from '../ui/sidebar'
 import { AppSidebar } from '../app-sidebar'
 import { SiteHeader } from '../site-header'
@@ -7,10 +7,27 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { BottomNav } from '../BottomNav'
 import PullToRefresh from '../PullToRefresh'
 import { cn } from '@/lib/utils'
+import { useNotificationStore } from '@/hooks/useNotificationStore'
+import { useSocket } from '@/hooks/useSocket'
 
 const UserLayout = () => {
     const location = useLocation();
     const isDirectPage = location.pathname.startsWith('/direct');
+
+    const { addNotification, fetchNotifications } = useNotificationStore();
+    const { on } = useSocket();
+
+    useEffect(() => {
+        fetchNotifications();
+
+        const unsubscribe = on('new_notification', (notification) => {
+            addNotification(notification);
+        });
+
+        return () => {
+            unsubscribe();
+        };
+    }, [on, addNotification, fetchNotifications]);
 
     return (
         <SidebarProvider
