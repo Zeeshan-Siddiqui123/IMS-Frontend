@@ -46,7 +46,7 @@ interface ChatState {
     setActiveUser: (userId: string | null) => void;
     addMessage: (message: Message) => void;
     updateTypingStatus: (userId: string, isTyping: boolean) => void; // Placeholder
-    markMessageAsRead: (conversationId: string, readerId: string) => void;
+    markMessageAsRead: (conversationId: string, readerId: string) => Promise<void>;
 
     // Online Users
     onlineUsers: string[];
@@ -230,27 +230,42 @@ export const useChatStore = create<ChatState>((set, get) => ({
         // TODO: implement logic to show typing indicator in UI
     },
 
-    markMessageAsRead: (conversationId, readerId) => {
-        const { messages, conversations } = get();
-        // Update messages in current view
-        const updatedMessages = messages.map(msg => {
-            if (msg.conversationId === conversationId && !msg.seenBy.includes(readerId)) {
-                return { ...msg, seenBy: [...msg.seenBy, readerId] };
-            }
-            return msg;
-        });
+    markMessageAsRead: async (conversationId, readerId) => {
+        try {
+            // Optimistic update first
+            const { messages, conversations } = get();
 
-        // Update last message in conversations list if applicable
-        const updatedConversations = conversations.map(c => {
-            if (c._id === conversationId && c.lastMessage && !c.lastMessage.seenBy.includes(readerId)) {
-                return {
-                    ...c,
-                    lastMessage: { ...c.lastMessage, seenBy: [...c.lastMessage.seenBy, readerId] }
-                };
-            }
-            return c;
-        });
+            // Send request to backend
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            await axios.put(
+                `${SERVER_URL}/api/messages/read`,
+                { conversationId },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
 
-        set({ messages: updatedMessages, conversations: updatedConversations });
+            // Update messages in current view
+            const updatedMessages = messages.map(msg => {
+                if (msg.conversationId === conversationId && !msg.seenBy.includes(readerId)) {
+                    return { ...msg, seenBy: [...msg.seenBy, readerId] };
+                }
+                return msg;
+            });
+
+            // Update last message in conversations list if applicable
+            const updatedConversations = conversations.map(c => {
+                if (c._id === conversationId && c.lastMessage && !c.lastMessage.seenBy.includes(readerId)) {
+                    return {
+                        ...c,
+                        lastMessage: { ...c.lastMessage, seenBy: [...c.lastMessage.seenBy, readerId] }
+                    };
+                }
+                return c;
+            });
+
+            set({ messages: updatedMessages, conversations: updatedConversations });
+
+        } catch (error) {
+            console.error('Error marking messages as read:', error);
+        }
     }
 }));

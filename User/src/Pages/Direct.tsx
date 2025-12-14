@@ -8,6 +8,7 @@ import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useChatStore } from "@/hooks/store/useChatStore";
 import { useSocket } from "@/hooks/useSocket";
+import { useSearchParams } from "react-router-dom";
 
 export default function Direct() {
     // const [activeId, setActiveId] = useState<string | undefined>(undefined); // Removed local state
@@ -15,6 +16,7 @@ export default function Direct() {
     const [sheetOpen, setSheetOpen] = useState(false); // Control sheet open/close
     const { conversations, addMessage, searchResults, activeUserId, setActiveUser } = useChatStore(); // Added activeUserId, setActiveUser
     const { on } = useSocket();
+    const [searchParams] = useSearchParams();
 
     // Handle user selection - close sheet on mobile
     const handleUserSelect = (id: string) => {
@@ -64,6 +66,14 @@ export default function Direct() {
         // activeUserId can be null, cast to string|undefined if needed by component, or update component to accept null
         return <ChatArea activeUserId={activeUserId || undefined} userName={getName(activeUserId)} userAvatar={getAvatar(activeUserId)} />;
     };
+
+    // Deep linking support
+    useEffect(() => {
+        const userId = searchParams.get('user');
+        if (userId) {
+            setActiveUser(userId);
+        }
+    }, [searchParams, setActiveUser]);
 
     useEffect(() => {
         // Listen for new messages

@@ -8,7 +8,7 @@ export interface Notification {
     sender: {
         _id: string;
         name: string;
-        profilePicture?: string;
+        avatar?: string;
         username: string;
     };
     type: 'LIKE' | 'COMMENT' | 'POST_UPLOAD' | 'MESSAGE' | 'SYSTEM' | 'LOGIN';
@@ -33,6 +33,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     notifications: [],
     unreadCount: 0,
     isLoading: false,
+
 
     fetchNotifications: async () => {
         set({ isLoading: true });
