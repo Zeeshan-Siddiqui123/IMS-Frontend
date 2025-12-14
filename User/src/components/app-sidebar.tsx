@@ -24,7 +24,7 @@ import Logout from "@/auth/Logout"
 import { userRepo } from "../repositories/userRepo"
 import { useAuthStore } from "@/hooks/store/authStore"
 import { usePwaInstall } from "@/hooks/usePwaInstall"
-import { NotificationsDropdown } from "./NotificationsDropdown"
+
 
 
 const data = {
@@ -64,9 +64,7 @@ export function AppSidebar(props) {
 
       <SidebarContent className="flex flex-col">
 
-        <div className="px-2 py-2">
-          <NotificationsDropdown />
-        </div>
+
         <NavMain items={data.navMain} />
         <div className="mt-auto border-t p-3">
           <DropdownMenu>

@@ -4,23 +4,24 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
-import { Trash2, CheckCheck, Bell } from 'lucide-react';
+import { usePushSubscription } from '@/hooks/usePushSubscription';
+import { Trash2, CheckCheck, Bell, BellRing } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const Notifications = () => {
-    const {
-        notifications,
-        fetchNotifications,
-        markAsRead,
-        markAllAsRead,
-        deleteNotification,
-        isLoading
-    } = useNotificationStore();
+    const notifications = useNotificationStore(state => state.notifications);
+    const fetchNotifications = useNotificationStore(state => state.fetchNotifications);
+    const markAsRead = useNotificationStore(state => state.markAsRead);
+    const markAllAsRead = useNotificationStore(state => state.markAllAsRead);
+    const deleteNotification = useNotificationStore(state => state.deleteNotification);
+    const isLoading = useNotificationStore(state => state.isLoading);
+
+    const { isSubscribed, subscribeToPush, loading: pushLoading } = usePushSubscription();
 
     useEffect(() => {
         fetchNotifications();
-    }, [fetchNotifications]);
+    }, []);
 
     const handleNotificationClick = async (id: string, postId?: string) => {
         await markAsRead(id);
@@ -28,6 +29,20 @@ const Notifications = () => {
 
     return (
         <div className="container py-6 max-w-2xl mx-auto space-y-6">
+            {!isSubscribed && !pushLoading && (
+                <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <BellRing className="h-5 w-5 text-primary" />
+                        <div>
+                            <p className="font-medium">Enable Push Notifications</p>
+                            <p className="text-sm text-muted-foreground">Get notified instantly about new activities.</p>
+                        </div>
+                    </div>
+                    <Button onClick={subscribeToPush} size="sm">
+                        Enable
+                    </Button>
+                </div>
+            )}
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                     <div className="space-y-1">

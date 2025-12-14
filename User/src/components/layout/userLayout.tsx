@@ -14,7 +14,8 @@ const UserLayout = () => {
     const location = useLocation();
     const isDirectPage = location.pathname.startsWith('/direct');
 
-    const { addNotification, fetchNotifications } = useNotificationStore();
+    const addNotification = useNotificationStore(state => state.addNotification);
+    const fetchNotifications = useNotificationStore(state => state.fetchNotifications);
     const { on } = useSocket();
 
     useEffect(() => {
