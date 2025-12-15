@@ -20,8 +20,12 @@ self.addEventListener('push', function (event) {
         const title = payload.title || 'New Notification';
         const options = {
             body: payload.body,
-            icon: '/pwa-192x192.png', // Replace with your app icon
-            badge: '/pwa-192x192.png',
+            icon: payload.icon || '/pwa-192x192.png', // Dynamic icon or default
+            badge: payload.badge || '/pwa-192x192.png', // Dynamic badge or default
+            vibrate: [200, 100, 200], // Distinct vibration pattern
+            renotify: true, // Alert even if replacing an old notification with same tag
+            requireInteraction: true, // Keep notification on screen until interaction
+            tag: payload.tag || 'default', // Grouping
             data: payload.data
         };
 
