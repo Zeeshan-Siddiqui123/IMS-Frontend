@@ -35,7 +35,7 @@ const signUpSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
   CNIC: z.string().regex(/^\d{5}-\d{7}-\d{1}$/, "CNIC must be in format XXXXX-XXXXXXX-X"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(64, "Password must be less than 64 characters"),
   course: z.string().min(1, "Course is required"),
   gender: z.string().min(1, "Gender is required"),
   shift: z.string().min(1, "Shift is required"),
