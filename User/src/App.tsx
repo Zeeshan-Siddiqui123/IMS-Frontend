@@ -14,7 +14,21 @@ import Notifications from "./Pages/Notifications"
 
 import { Toaster } from "@/components/ui/sonner"
 
+import { useEffect } from "react";
+import OneSignal from 'react-onesignal';
+
 const App = () => {
+  useEffect(() => {
+    // Initialize OneSignal
+    OneSignal.init({
+      appId: "YOUR_ONESIGNAL_APP_ID", // REPLACE THIS WITH YOUR ONESIGNAL APP ID
+      allowLocalhostAsSecureOrigin: true,
+    }).then(() => {
+      console.log("OneSignal initialized");
+      // Optional: Get Player ID
+      OneSignal.Slidedown.promptPush();
+    });
+  }, []);
   return (
     <Router>
       <Toaster />

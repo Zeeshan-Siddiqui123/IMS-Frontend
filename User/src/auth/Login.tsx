@@ -1,6 +1,6 @@
-// auth/Login.tsx
 import React, { useState } from "react"
 import { toast } from "sonner"
+import OneSignal from 'react-onesignal'
 import { CiUnread, CiRead } from "react-icons/ci"
 import { userRepo } from "../repositories/userRepo"
 import { Button } from "../components/ui/button"
@@ -67,6 +67,9 @@ const Login: React.FC = () => {
       }
       setUser(response.user)
       clearAttendance()
+
+      // Login to OneSignal to allow targeted notifications
+      OneSignal.login(response.user._id);
 
       toast.success("Login successful")
 
