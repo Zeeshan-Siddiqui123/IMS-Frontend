@@ -21,7 +21,11 @@ const App = () => {
   useEffect(() => {
     // Initialize OneSignal
     OneSignal.init({
-      appId: "YOUR_ONESIGNAL_APP_ID", // REPLACE THIS WITH YOUR ONESIGNAL APP ID
+      appId: "62b37eb6-08ac-40c0-8099-3ea1d1959dd6",
+      safari_web_id: "web.onesignal.auto.186ea02a-f890-410a-b109-aa22c180382d",
+      notifyButton: {
+        enable: true,
+      } as any,
       allowLocalhostAsSecureOrigin: true,
     }).then(() => {
       console.log("OneSignal initialized");
