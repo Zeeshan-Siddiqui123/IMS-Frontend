@@ -23,6 +23,7 @@ const App = () => {
     OneSignal.init({
       appId: "62b37eb6-08ac-40c0-8099-3ea1d1959dd6",
       safari_web_id: "web.onesignal.auto.186ea02a-f890-410a-b109-aa22c180382d",
+      serviceWorkerPath: "sw.js",
       notifyButton: {
         enable: true,
       } as any,

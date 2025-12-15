@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import OneSignal from 'react-onesignal'
 import { SidebarInset, SidebarProvider } from '../ui/sidebar'
 import { AppSidebar } from '../app-sidebar'
 import { SiteHeader } from '../site-header'
@@ -9,14 +10,22 @@ import PullToRefresh from '../PullToRefresh'
 import { cn } from '@/lib/utils'
 import { useNotificationStore } from '@/hooks/useNotificationStore'
 import { useSocket } from '@/hooks/useSocket'
+import { useAuthStore } from '@/hooks/store/authStore'
 
 const UserLayout = () => {
     const location = useLocation();
     const isDirectPage = location.pathname.startsWith('/direct');
+    const { user } = useAuthStore();
 
     const addNotification = useNotificationStore(state => state.addNotification);
     const fetchNotifications = useNotificationStore(state => state.fetchNotifications);
     const { on } = useSocket();
+
+    useEffect(() => {
+        if (user?._id) {
+            OneSignal.login(user._id);
+        }
+    }, [user]);
 
     useEffect(() => {
         fetchNotifications();

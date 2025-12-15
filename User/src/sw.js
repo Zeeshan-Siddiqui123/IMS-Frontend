@@ -3,6 +3,9 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
 
+// Load OneSignal SDK Worker
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDKWorker.js');
+
 self.skipWaiting();
 clientsClaim();
 
